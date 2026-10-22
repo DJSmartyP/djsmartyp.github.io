@@ -2,7 +2,7 @@ const http = require('node:http');
 const fs = require('node:fs');
 const path = require('node:path');
 
-const root = path.join(__dirname, 'dist');
+const root = __dirname;
 const port = Number(process.env.PORT || 8767);
 const types = {
   '.css': 'text/css; charset=utf-8',

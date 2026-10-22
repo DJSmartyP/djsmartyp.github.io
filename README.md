@@ -14,7 +14,7 @@ A mobile-friendly, static snack planner for Junior Adventures Group club teams. 
 
 ## Run
 
-Run `npm start`, then open http://127.0.0.1:8767/. There is no build or application dependency installation. You can also serve `dist/` with any static web server. PDF generation uses the bundled MIT-licensed pdf-lib browser distribution; its licence is in `dist/vendor/`. Screen fonts use Google Fonts, with system fallbacks. The PDF and company logo are local assets.
+Run `npm start`, then open http://127.0.0.1:8767/. There is no build or application dependency installation. You can also serve the repository root with any static web server. PDF generation uses the bundled MIT-licensed pdf-lib browser distribution; its licence is in `vendor/`. Screen fonts use Google Fonts, with system fallbacks. The PDF and company logo are local assets.
 
 Run calculation checks with Node 18+:
 
@@ -24,9 +24,9 @@ npm test
 
 ## GitHub Pages
 
-The included `.github/workflows/pages.yml` publishes `dist/` when `main` changes. In repository Settings > Pages select **GitHub Actions**. GitHub Pages eligibility depends on repository visibility and the account plan. Do not add private attendance records or children's names to the repository. The application only stores headcounts locally, and sends no planning data to a server.
+GitHub Pages publishes the repository root from `main`, with `index.html` as the site home page. In repository Settings > Pages select **Deploy from a branch**, `main`, `/ (root)`. GitHub Pages eligibility depends on repository visibility and the account plan. Do not add private attendance records or children's names to the repository. The application only stores headcounts locally, and sends no planning data to a server.
 
-To deploy manually, publish the contents of `dist/` as the site root. Asset paths are relative and support repository subpaths.
+To deploy manually, publish the repository root. Asset paths are relative and support repository subpaths.
 
 ## Content and cost assumptions
 
@@ -45,11 +45,11 @@ Food exclusions operate on ingredients, not on allergens in every packaged produ
 
 ## Source layout
 
-- `dist/catalogue.js`: products, reference prices, estimated yields and recipes.
-- `dist/planner.js`: calculation engine.
-- `dist/app.js`: browser interface, exclusions, saving and exports.
-- `dist/pdf-output.js`: branded PDF layouts.
-- `dist/assets/`: supplied company logo, including a PNG for PDF embedding.
+- `catalogue.js`: products, reference prices, estimated yields and recipes.
+- `planner.js`: calculation engine.
+- `app.js`: browser interface, exclusions, saving and exports.
+- `pdf-output.js`: branded PDF layouts.
+- `assets/`: supplied company logo, including a PNG for PDF embedding.
 - `tests/planner.test.cjs`: pack rounding, fee thresholds, budget forecasts, exclusions and combined session checks.
 
 The supplied JAG logo remains the property of its owner. The original approved-food PDF is not included in this repository.

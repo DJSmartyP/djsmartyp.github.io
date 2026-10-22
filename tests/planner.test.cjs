@@ -1,4 +1,4 @@
-const {test}=require('node:test');const assert=require('node:assert/strict');const {calculate}=require('../dist/planner.js');
+const {test}=require('node:test');const assert=require('node:assert/strict');const {calculate}=require('../planner.js');
 const base=()=>({session:'after',days:[{recipe:'chickenSandwich',count:15,fruit:'banana'}],excluded:[],products:{},portionPercent:100,buffer:0,budget:200,weeks:4,method:'delivery',deliveryFee:3.5,smallFee:5,threshold:50});
 test('one 15-child sandwich day buys whole packs and charges one delivery',()=>{const p=calculate(base());assert.equal(p.rows.find(r=>r.id==='bread').packs,2);assert.equal(p.rows.find(r=>r.id==='chicken').packs,3);assert.equal(p.rows.find(r=>r.id==='banana').packs,3);assert.equal(p.delivery,350);assert.equal(p.surcharge,500);assert.equal(p.projection,p.total*4);assert.equal(p.balance,20000-p.total*4);});
 test('no order when all days are closed; no fees',()=>{const s=base();s.days[0].count=0;s.days[0].recipe='';assert.equal(calculate(s).total,0);});
