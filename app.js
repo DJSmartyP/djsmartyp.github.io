@@ -1,60 +1,203 @@
 'use strict';
-const $=id=>document.getElementById(id), C=JAGCatalogue;
-const DAY_NAMES=['Monday','Tuesday','Wednesday','Thursday','Friday'];
-const money=p=>new Intl.NumberFormat('en-GB',{style:'currency',currency:'GBP'}).format(p/100);
-const esc=s=>String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
-const key='jag-snack-planner-v1';
-function monday(){const d=new Date();d.setDate(d.getDate()-((d.getDay()+6)%7));return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;}
-function defaultDays(session){const menus=session==='breakfast'?['cereal','porridge','cereal','porridge','cereal']:['chickenSandwich','cheesePitta','hummusWrap','chickenWrap','cheeseToast'];return menus.map((recipe,i)=>({count:15,recipe,fruit:['banana','apple','satsuma','banana','apple'][i]}));}
-function fresh(){return {club:'',weekDate:monday(),session:'after',days:defaultDays('after'),breakfastDays:defaultDays('breakfast'),vegetarian:false,excluded:[],portionPercent:100,buffer:0,budget:'',weeks:4,method:'delivery',deliveryFee:3.50,smallFee:5,threshold:50,products:{},checked:[],pdfVariant:'after',includeStaff:true};}
-let state=fresh(),result=null,storageAvailable=true;
-try{const saved=JSON.parse(localStorage.getItem(key));if(saved&&Array.isArray(saved.days)&&saved.days.length===5&&['after','breakfast','both'].includes(saved.session)){state={...state,...saved,excluded:Array.isArray(saved.excluded)?saved.excluded.filter(id=>C.products[id]):[],products:saved.products&&typeof saved.products==='object'?saved.products:{},checked:Array.isArray(saved.checked)?saved.checked:[]};if(!Array.isArray(state.breakfastDays)||state.breakfastDays.length!==5)state.breakfastDays=defaultDays('breakfast');}}catch{storageAvailable=false;}
-function persist(){try{localStorage.setItem(key,JSON.stringify(state));$('save-status').textContent='Saved on this device. No child names or shared accounts needed.';}catch{storageAvailable=false;$('save-status').textContent='Device saving is unavailable. Download your plan before closing this page.';}}
-function effectiveIngredients(recipe){const ingredients={...recipe.ingredients};if(state.vegetarian&&ingredients.chicken){delete ingredients.chicken;ingredients.cheese=20;}return ingredients;}
-function recipeName(recipe){return recipe.name.replace(/^Chicken/,state.vegetarian?'Cheese':'Chicken').replace(/^chicken/,state.vegetarian?'Cheese':'Chicken');}
-function choices(session){return Object.entries(C.recipes).filter(([,r])=>r.session===session&&!Object.keys(effectiveIngredients(r)).some(id=>state.excluded.includes(id)));}
-function reconcileMenus(){let changes=0;const groups=[[state.days,state.session==='breakfast'?'breakfast':'after']];if(state.session==='both')groups.push([state.breakfastDays,'breakfast']);const fruits=['banana','apple','satsuma'].filter(id=>!state.excluded.includes(id));for(const [days,session] of groups){const options=choices(session);for(const day of days){if(!options.some(([id])=>id===day.recipe)){day.recipe=options[0]?.[0]||'';changes++;}if(!fruits.includes(day.fruit)){day.fruit=fruits[0]||'';changes++;}}}return changes;}
-function renderDayGroup(target,days,session){const options=choices(session),fruits=['banana','apple','satsuma'].filter(id=>!state.excluded.includes(id));$(target).innerHTML=(state.session==='both'?`<h3>${session==='breakfast'?'Breakfast club':'After-school club'}</h3>`:'')+days.map((day,i)=>`<div class="day"><h3>${DAY_NAMES[i]}</h3><label>Children<input aria-label="${DAY_NAMES[i]} ${session} children" type="number" min="0" max="1000" step="1" required data-day="${i}" data-group="${target}" data-field="count" value="${esc(day.count)}"></label><div class="day-menu"><label>Menu<select aria-label="${DAY_NAMES[i]} ${session} menu" data-day="${i}" data-group="${target}" data-field="recipe">${options.length?options.map(([id,r])=>`<option value="${id}" ${id===day.recipe?'selected':''}>${esc(recipeName(r))}</option>`).join(''):'<option value="">No suitable menu</option>'}</select></label><label>Fruit<select aria-label="${DAY_NAMES[i]} ${session} fruit" data-day="${i}" data-group="${target}" data-field="fruit">${fruits.length?fruits.map(id=>`<option value="${id}" ${day.fruit===id?'selected':''}>${esc(C.products[id].name)}</option>`).join(''):'<option value="">No suitable fruit</option>'}</select></label></div></div>`).join('');}
-function renderDays(){renderDayGroup('days',state.days,state.session==='breakfast'?'breakfast':'after');$('breakfast-days').hidden=state.session!=='both';if(state.session==='both')renderDayGroup('breakfast-days',state.breakfastDays,'breakfast');}
-function renderExclusions(){$('exclusions').innerHTML=Object.entries(C.products).map(([id,p])=>`<label><input type="checkbox" data-exclude="${id}" ${state.excluded.includes(id)?'checked':''}>${esc(p.name)}</label>`).join('');}
-function mount(){for(const id of ['club','weekDate','portionPercent','buffer','budget','weeks','method','deliveryFee','smallFee','threshold','pdfVariant'])$(id).value=state[id];$('vegetarian').checked=state.vegetarian;$('includeStaff').checked=state.includeStaff;document.querySelector(`input[name=session][value=${state.session}]`).checked=true;reconcileMenus();renderDays();renderExclusions();update();}
-function update(){
- $('online-fees').hidden=state.method==='store';for(const id of ['deliveryFee','smallFee','threshold'])$(id).disabled=state.method==='store';
- const invalid=[...$('planner-form').querySelectorAll('input,select')].find(el=>!el.disabled&&!el.checkValidity());
- try{if(invalid)throw new Error('Please check '+(invalid.closest('label')?.textContent.trim()||'the highlighted field')+'.');result=JAGPlanner.calculate(state);$('invalid').hidden=true;document.querySelector('.results').classList.remove('invalid');for(const id of ['copy','download','pdf-download','print'])$(id).disabled=false;}
- catch(error){result=null;$('invalid').textContent=error.message;$('invalid').hidden=false;document.querySelector('.results').classList.add('invalid');for(const id of ['copy','download','pdf-download','print'])$(id).disabled=true;persist();return;}
- $('club-name').textContent=state.club;$('visits').textContent=result.children+' child sessions';$('weekly-total').textContent=money(result.total);$('food-total').textContent=money(result.food);$('delivery-total').textContent=money(result.delivery);$('small-total').textContent=money(result.surcharge);
- $('fee-note').textContent=result.surcharge?`Food is ${money(result.threshold-result.food)} below the small-order threshold. ${money(result.surcharge)} has been added for this week’s order.`:result.food===0?'No purchase required, so no order fees have been added.':'';
- const hasBudget=state.budget!=='';
- $('budget-results').innerHTML=hasBudget?`<div class="budget-box"><div class="budget-grid"><div><span>Weekly allowance</span><b>${money(result.weeklyBudget)}</b></div><div><span>${result.weeks}-week forecast</span><b>${money(result.projection)}</b></div></div><div class="meter" aria-hidden="true"><div style="width:${result.budget>0?Math.min(100,result.projection/result.budget*100):100}%"></div></div><p class="budget-status ${result.balance<0?'over':''}">${money(Math.abs(result.balance))} ${result.balance<0?'over budget':'left in the budget'} across ${result.weeks} weeks</p></div>`:'<p class="fee-note">Add your budget to see your weekly allowance and forecast.</p>';
- let group='';$('shopping-list').innerHTML=result.rows.map(r=>{const heading=group!==r.group?`<h3 class="group-title">${r.group}</h3>`:'';group=r.group;return heading+`<div class="shop-row"><input type="checkbox" data-purchased="${r.id}" aria-label="${esc(r.name)} bought" ${state.checked.includes(r.id)?'checked':''}><div><div class="product-name"><a href="${r.url}" target="_blank" rel="noopener">${esc(r.name)} ↗</a></div><small>${r.packs} × ${esc(r.pack)}${r.size!==C.products[r.id].size?' (quantity overridden)':''}</small><small>Need about ${Math.ceil(r.required)} ${r.unit}${r.stock?`; already have ${r.stock} ${r.unit}`:''}</small><small class="${r.checked&&!r.customPrice?'':'allowance'}">${r.customPrice?'Your price':r.checked?'Tesco reference price':'Planning price allowance'}${r.availability?' • Reference item unavailable, check equivalent':''}</small></div><div class="row-price">${money(r.total)}<small>${money(r.price)} / pack</small></div></div>`;}).join('');
- $('empty').hidden=result.rows.some(r=>r.packs>0);$('list-subtitle').textContent=`${result.rows.reduce((sum,r)=>sum+r.packs,0)} packs / items to buy. Quantities rounded up.`;
- $('product-editor').innerHTML=result.rows.map(r=>`<div class="editor-item"><b>${esc(r.name)}</b><div class="editor-fields"><label>£ / pack<input aria-label="${esc(r.name)} pack price" data-product="${r.id}" data-prop="price" type="number" min="0" max="1000" step=".01" value="${r.price/100}"></label><label>${r.unit} / pack<input aria-label="${esc(r.name)} pack quantity" data-product="${r.id}" data-prop="size" type="number" min=".01" max="100000" step=".01" value="${r.size}"></label><label>Already have (${r.unit})<input aria-label="${esc(r.name)} stock" data-product="${r.id}" data-prop="stock" type="number" min="0" max="100000" step=".01" value="${r.stock}"></label></div></div>`).join('');
- $('menu-summary').innerHTML=result.days.map(d=>`<div class="menu-line"><b>${DAY_NAMES[d.index].slice(0,3)}</b><div><span>${esc(d.recipe)}${d.count?' + '+esc(d.fruit):''}</span><small>${d.session==='breakfast'?'Breakfast':'After school'} · ${d.count} children</small></div></div>`).join('');
- persist();
+
+const $ = id => document.getElementById(id);
+const C = JAGCatalogue;
+const DAYS = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday'];
+const money = p => new Intl.NumberFormat('en-GB', {style:'currency', currency:'GBP'}).format(p / 100);
+const esc = value => String(value).replace(/[&<>"']/g, c => ({'&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#39;'}[c]));
+const storageKey = 'jag-snack-planner-v2';
+
+function monday() {
+  const date = new Date();
+  date.setDate(date.getDate() - ((date.getDay() + 6) % 7));
+  return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
 }
-$('planner-form').addEventListener('submit',e=>e.preventDefault());
-$('planner-form').addEventListener('change',e=>{const el=e.target;
- if(el.dataset.exclude){state.excluded=Array.from($('exclusions').querySelectorAll('input:checked')).map(x=>x.dataset.exclude);const n=reconcileMenus();renderDays();$('menu-changes').textContent=n?'Menus updated to avoid excluded foods. Please review the alternatives.':'';}
- else if(el.name==='session'){const old=state.session;state.session=el.value;if(old==='breakfast'&&state.session==='both'){state.breakfastDays=state.days;state.days=defaultDays('after');}else if(old==='both'&&state.session==='breakfast'){state.days=state.breakfastDays;}else if(old==='breakfast'||state.session==='breakfast')state.days=defaultDays(state.session);state.pdfVariant=state.session;$('pdfVariant').value=state.pdfVariant;reconcileMenus();renderDays();}
- else if(el.dataset.day){const days=el.dataset.group==='breakfast-days'?state.breakfastDays:state.days;days[+el.dataset.day][el.dataset.field]=el.dataset.field==='count'?el.value:el.value;}
- else if(el.id==='vegetarian'){state.vegetarian=el.checked;reconcileMenus();renderDays();}
- else if(el.id==='method'){state.method=el.value;state.threshold=state.method==='collect'?25:50;state.deliveryFee=state.method==='collect'?1.50:3.50;$('threshold').value=state.threshold;$('deliveryFee').value=state.deliveryFee;}
- else if(el.id in state)state[el.id]=el.type==='checkbox'?el.checked:el.value;
- update();
+const blankDays = () => Array.from({length:5}, () => ({count:15, recipe:'', fruit:''}));
+const fresh = () => ({club:'', weekDate:monday(), session:'after', days:blankDays(), breakfastDays:blankDays(), excluded:[], budget:'', weeks:4, method:'delivery', deliveryFee:3.5, smallFee:5, threshold:50, portionPercent:100, buffer:0, products:{}, checked:[], generated:false});
+let state = fresh();
+let result = null;
+try {
+  const saved = JSON.parse(localStorage.getItem(storageKey));
+  if (saved && Array.isArray(saved.days) && saved.days.length === 5 && ['after','breakfast','both'].includes(saved.session)) {
+    state = {...state, ...saved, excluded:Array.isArray(saved.excluded) ? saved.excluded.filter(id => C.products[id]) : [], products:saved.products && typeof saved.products === 'object' ? saved.products : {}, checked:Array.isArray(saved.checked) ? saved.checked : []};
+    if (!Array.isArray(state.breakfastDays) || state.breakfastDays.length !== 5) state.breakfastDays = blankDays();
+  }
+} catch { /* Local storage can be unavailable. The planner still works. */ }
+
+function persist() {
+  try {
+    localStorage.setItem(storageKey, JSON.stringify(state));
+    $('save-status').textContent = 'Saved on this device. No child names or shared accounts needed.';
+  } catch {
+    $('save-status').textContent = 'Device saving is unavailable. Download your PDFs before closing this page.';
+  }
+}
+function renderAttendance(target, days, session) {
+  $(target).innerHTML = `<h3>${session === 'breakfast' ? 'Breakfast club' : 'After-school club'}</h3>` + days.map((day, index) => `<label class="attendance-row"><span>${DAYS[index]}</span><input type="number" min="0" max="1000" step="1" required aria-label="${DAYS[index]} ${session} children" data-day="${index}" data-group="${target}" value="${esc(day.count)}"></label>`).join('');
+}
+function renderDays() {
+  renderAttendance('days', state.days, state.session === 'breakfast' ? 'breakfast' : 'after');
+  $('breakfast-days').hidden = state.session !== 'both';
+  if (state.session === 'both') renderAttendance('breakfast-days', state.breakfastDays, 'breakfast');
+}
+function renderIngredients() {
+  let group = '';
+  $('exclusions').innerHTML = Object.entries(C.products).map(([id, product]) => {
+    const heading = group !== product.group ? `<h3>${esc(product.group)}</h3>` : '';
+    group = product.group;
+    return heading + `<label><input type="checkbox" data-exclude="${id}" ${state.excluded.includes(id) ? 'checked' : ''}><span>${esc(product.name)}</span></label>`;
+  }).join('');
+}
+function renderProductEditor() {
+  $('product-editor').innerHTML = Object.entries(C.products).map(([id, product]) => {
+    const custom = state.products[id] || {};
+    return `<div class="editor-item"><b>${esc(product.name)}</b><div class="editor-fields"><label>£ / pack<input aria-label="${esc(product.name)} pack price" data-product="${id}" data-prop="price" type="number" min="0" max="1000" step=".01" value="${custom.price ?? product.price}"></label><label>${esc(product.unit)} / pack<input aria-label="${esc(product.name)} pack quantity" data-product="${id}" data-prop="size" type="number" min=".01" max="100000" step=".01" value="${custom.size ?? product.size}"></label><label>Already have (${esc(product.unit)})<input aria-label="${esc(product.name)} stock" data-product="${id}" data-prop="stock" type="number" min="0" max="100000" step=".01" value="${custom.stock ?? 0}"></label></div></div>`;
+  }).join('');
+}
+function showMessage(message) {
+  $('invalid').textContent = message;
+  $('invalid').hidden = !message;
+}
+function invalidate(message = 'Inputs changed. Generate a new plan to check the budget.') {
+  state.generated = false;
+  result = null;
+  $('results').hidden = true;
+  $('ready').hidden = false;
+  $('ready').querySelector('p').textContent = message;
+  showMessage('');
+  persist();
+}
+function renderResults() {
+  if (!result) return;
+  $('ready').hidden = true;
+  $('results').hidden = false;
+  showMessage('');
+  $('club-name').textContent = state.club;
+  $('visits').textContent = `${result.children} child sessions`;
+  $('weekly-total').textContent = money(result.total);
+  $('food-total').textContent = money(result.food);
+  $('delivery-total').textContent = money(result.delivery);
+  $('small-total').textContent = money(result.surcharge);
+  $('weekly-budget').textContent = money(result.weeklyBudget);
+  $('projection').textContent = money(result.projection);
+  $('budget-status').textContent = `${money(result.balance)} left across ${result.weeks} weeks`;
+  $('menu-summary').innerHTML = DAYS.map((name, index) => {
+    const sessions = state.session === 'both' ? ['breakfast','after'] : [state.session];
+    return `<div class="menu-day"><h3>${name}</h3>${sessions.map(session => {
+      const day = result.days.find(item => item.index === index && item.session === session);
+      return `<div class="menu-line"><b>${session === 'breakfast' ? 'Breakfast' : 'After school'}</b><span>${day.count ? `${esc(day.recipe)} + ${esc(day.fruit)}` : 'Club closed'}<small>${day.count} children</small></span></div>`;
+    }).join('')}</div>`;
+  }).join('');
+  let group = '';
+  const buying = result.rows.filter(row => row.packs > 0);
+  $('shopping-list').innerHTML = buying.map(row => {
+    const heading = group !== row.group ? `<h3 class="group-title">${esc(row.group)}</h3>` : '';
+    group = row.group;
+    return heading + `<div class="shop-row"><input type="checkbox" data-purchased="${row.id}" aria-label="${esc(row.name)} bought" ${state.checked.includes(row.id) ? 'checked' : ''}><div><div class="product-name"><a href="${row.url}" target="_blank" rel="noopener">${esc(row.name)} ↗</a></div><small>${row.packs} × ${esc(row.pack)}</small><small>Need about ${Math.ceil(row.required)} ${esc(row.unit)}${row.stock ? `; already have ${row.stock} ${esc(row.unit)}` : ''}</small><small class="${row.checked && !row.customPrice ? '' : 'allowance'}">${row.customPrice ? 'Your price' : row.checked ? 'Tesco reference price' : 'Planning price allowance'}${row.availability ? ' · Check equivalent product' : ''}</small></div><div class="row-price">${money(row.total)}<small>${money(row.price)} / pack</small></div></div>`;
+  }).join('');
+  $('empty').hidden = buying.length > 0;
+  $('list-subtitle').textContent = `${buying.reduce((sum, row) => sum + row.packs, 0)} full packs / items to buy.`;
+}
+function generate() {
+  showMessage('');
+  try {
+    const plan = JAGPlanner.generate(state);
+    if (plan.status !== 'ok') {
+      const extra = plan.cheapest ? ` The lowest-cost menu found is about ${money(plan.cheapest.total)} per week, or ${money(plan.cheapest.projection)} for the period.` : '';
+      throw new Error(`No menu fits ${money(Number(state.budget) * 100)} across ${state.weeks} weeks with the current attendance, exclusions and prices.${extra} Review the budget, attendance, fees or pack prices.`);
+    }
+    state.days = plan.days.map(({count, recipe, fruit}) => ({count, recipe, fruit}));
+    state.breakfastDays = plan.breakfastDays.map(({count, recipe, fruit}) => ({count, recipe, fruit}));
+    state.checked = [];
+    state.generated = true;
+    result = plan.result;
+    renderResults();
+    persist();
+  } catch (error) {
+    invalidate('Change an input and try generating again.');
+    showMessage(error.message);
+  }
+}
+function mount() {
+  for (const id of ['club','weekDate','budget','weeks','deliveryFee','smallFee','threshold','portionPercent','buffer']) $(id).value = state[id];
+  document.querySelector(`input[name="session"][value="${state.session}"]`).checked = true;
+  document.querySelector(`input[name="method"][value="${state.method}"]`).checked = true;
+  $('online-fees').hidden = state.method === 'store';
+  for (const id of ['deliveryFee','smallFee','threshold']) $(id).disabled = state.method === 'store';
+  renderDays();renderIngredients();renderProductEditor();
+  if (state.generated) {
+    try { result = JAGPlanner.calculate(state); if (result.projection <= result.budget && state.club.trim() && state.budget !== '') renderResults(); else invalidate(); }
+    catch { invalidate(); }
+  } else invalidate('Enter your details, then generate a menu and shopping list.');
+}
+
+$('planner-form').addEventListener('submit', event => {event.preventDefault();generate();});
+$('planner-form').addEventListener('change', event => {
+  const el = event.target;
+  if (el.dataset.exclude) state.excluded = [...$('exclusions').querySelectorAll('input:checked')].map(input => input.dataset.exclude);
+  else if (el.dataset.day !== undefined) {
+    const days = el.dataset.group === 'breakfast-days' ? state.breakfastDays : state.days;
+    days[Number(el.dataset.day)].count = Number(el.value);
+  } else if (el.dataset.product) {
+    if (!el.checkValidity()) { el.reportValidity(); return; }
+    state.products[el.dataset.product] = {...state.products[el.dataset.product], [el.dataset.prop]:Number(el.value)};
+  } else if (el.name === 'session') state.session = el.value;
+  else if (el.name === 'method') {
+    state.method = el.value;
+    state.threshold = state.method === 'collect' ? 25 : 50;
+    state.deliveryFee = state.method === 'collect' ? 1.5 : state.method === 'delivery' ? 3.5 : 0;
+    $('threshold').value = state.threshold;
+    $('deliveryFee').value = state.deliveryFee;
+    $('online-fees').hidden = state.method === 'store';
+    for (const id of ['deliveryFee','smallFee','threshold']) $(id).disabled = state.method === 'store';
+  } else if (el.id in state) state[el.id] = el.value;
+  if (el.name === 'session') renderDays();
+  invalidate();
 });
-$('apply-count').addEventListener('click',()=>{if(!$('same-count').checkValidity()){$('same-count').reportValidity();return;}for(const day of [...state.days,...state.breakfastDays])day.count=Number($('same-count').value);renderDays();update();});
-$('product-editor').addEventListener('change',e=>{const el=e.target;if(!el.dataset.product)return;if(!el.checkValidity()){el.reportValidity();result=null;$('invalid').hidden=false;$('invalid').textContent='Correct the pack size, price or stock field to update the estimate.';document.querySelector('.results').classList.add('invalid');for(const id of ['copy','download','pdf-download','print'])$(id).disabled=true;return;}state.products[el.dataset.product]={...state.products[el.dataset.product],[el.dataset.prop]:Number(el.value)};update();});
-$('shopping-list').addEventListener('change',e=>{const id=e.target.dataset.purchased;if(!id)return;state.checked=state.checked.filter(x=>x!==id);if(e.target.checked)state.checked.push(id);persist();});
-function textReport(){if(!result)return '';const lines=[`JAG SNACK PLANNER - ${state.club||'Club plan'}`,`Week commencing ${state.weekDate}`,`Session: ${state.session==='both'?'Breakfast + after school':state.session==='after'?'After school':'Breakfast'}`,'',...result.days.map(d=>`${DAY_NAMES[d.index]} (${d.session==='after'?'after school':'breakfast'}, ${d.count} children): ${d.recipe}${d.count?' + '+d.fruit:''}`),'','SHOPPING LIST',...result.rows.map(r=>`${r.packs} x ${r.name} (${r.pack}; ${r.size} ${r.unit}/pack): ${money(r.total)}${r.stock?`; usable stock ${r.stock} ${r.unit}`:''}`),'',`Food: ${money(result.food)}`,`Delivery / collection: ${money(result.delivery)}`,`Small-order charge: ${money(result.surcharge)}`,`Weekly total: ${money(result.total)}`,`${result.weeks}-week forecast: ${money(result.projection)}`];if(state.budget!=='')lines.push(`Period budget: ${money(result.budget)}`,`Period balance: ${money(result.balance)}`);if(state.excluded.length)lines.push('Excluded foods: '+state.excluded.map(id=>C.products[id].name).join(', '));lines.push('','Indicative Tesco prices, researched 22 October 2026. Planning allowances apply to some items. Verify current prices, product labels, pack quantities and slot charges. Forecast repeats this week with full packs and fees each week; no leftover carry-forward.');return lines.join('\n');}
-function saveBlob(blob,name){const a=document.createElement('a'),url=URL.createObjectURL(blob);a.href=url;a.download=name;a.click();setTimeout(()=>URL.revokeObjectURL(url),1000);}
-$('copy').addEventListener('click',async()=>{try{await navigator.clipboard.writeText(textReport());$('action-status').textContent='Shopping list copied.';}catch{$('action-status').textContent='Copy is unavailable in this browser. Use Download list instead.';}});
-$('download').addEventListener('click',()=>saveBlob(new Blob([textReport()],{type:'text/plain;charset=utf-8'}),'JAG-Snack-Shopping-List.txt'));
-$('print').addEventListener('click',()=>window.print());
-$('reset').addEventListener('click',()=>{if(window.confirm('Reset the menu, prices, exclusions, stock and budget saved on this device?')){state=fresh();mount();}});
-function pdfData(){if(!result)throw new Error('Complete your plan first.');if(!state.club.trim())throw new Error('Enter your site / school name before downloading a personalised PDF.');if(!state.weekDate)throw new Error('Choose the week commencing date.');if(state.pdfVariant==='both'&&state.session!=='both')throw new Error('Select Breakfast + after school in Your club & week and plan both sessions first.');if(state.pdfVariant==='after'&&state.session==='breakfast')throw new Error('Plan an after-school session before choosing this PDF.');if(state.pdfVariant==='breakfast'&&state.session==='after')throw new Error('Plan a breakfast session before choosing this PDF.');return {state:JSON.parse(JSON.stringify(state)),result:JSON.parse(JSON.stringify(result))};}
-$('pdfVariant').addEventListener('change',e=>{state.pdfVariant=e.target.value;persist();});
-$('includeStaff').addEventListener('change',e=>{state.includeStaff=e.target.checked;persist();});
-$('pdf-download').addEventListener('click',async()=>{try{const data=pdfData();$('pdf-status').textContent='Preparing your branded PDF…';$('pdf-download').disabled=true;const bytes=await JAGPDF.create(data);saveBlob(new Blob([bytes],{type:'application/pdf'}),`JAG-${state.club.replace(/[^a-z0-9]+/gi,'-')}-${state.pdfVariant}-${state.weekDate}.pdf`);$('pdf-status').textContent='PDF downloaded: noticeboard menu'+(state.includeStaff?' plus separate staff report.':'.');}catch(error){$('pdf-status').textContent=error.message;if(!state.club.trim())$('club').focus();}finally{$('pdf-download').disabled=!result;}});
-window.JAGApp={getState:()=>JSON.parse(JSON.stringify(state)),getResult:()=>result,pdfData};
+$('apply-count').addEventListener('click', () => {
+  if (!$('same-count').checkValidity()) { $('same-count').reportValidity(); return; }
+  for (const day of [...state.days, ...state.breakfastDays]) day.count = Number($('same-count').value);
+  renderDays();invalidate();
+});
+$('shopping-list').addEventListener('change', event => {
+  const id = event.target.dataset.purchased;
+  if (!id) return;
+  state.checked = state.checked.filter(item => item !== id);
+  if (event.target.checked) state.checked.push(id);
+  persist();
+});
+function textReport() {
+  const lines = [`JAG SNACK PLANNER - ${state.club}`, `Week commencing ${state.weekDate}`, `Budget ${money(result.budget)} / ${result.weeks} weeks`, `Weekly shop ${money(result.total)}; period forecast ${money(result.projection)}`, '', 'GENERATED MENU'];
+  for (const day of result.days) lines.push(`${DAYS[day.index]} ${day.session === 'breakfast' ? 'breakfast' : 'after school'} (${day.count} children): ${day.recipe}${day.count ? ' + ' + day.fruit : ''}`);
+  lines.push('', 'BUYING LIST');
+  for (const row of result.rows.filter(item => item.packs > 0)) lines.push(`${row.packs} x ${row.name} (${row.pack}): ${money(row.total)}`);
+  lines.push('', 'Check current prices, product labels, quantities and delivery fees before ordering.');
+  return lines.join('\n');
+}
+function saveBlob(blob, name) {
+  const a = document.createElement('a'), url = URL.createObjectURL(blob);
+  a.href = url;a.download = name;a.click();setTimeout(() => URL.revokeObjectURL(url), 10000);
+}
+$('copy').addEventListener('click', async () => {
+  try { await navigator.clipboard.writeText(textReport());$('action-status').textContent = 'Buying list copied.'; }
+  catch { $('action-status').textContent = 'Copy is unavailable here. Use Download text list instead.'; }
+});
+$('download').addEventListener('click', () => saveBlob(new Blob([textReport()], {type:'text/plain;charset=utf-8'}), 'JAG-Snack-Buying-List.txt'));
+$('reset').addEventListener('click', () => {if (window.confirm('Reset the club, budget, ingredients, stock and generated plan saved on this device?')) {state = fresh();result = null;mount();}});
+async function pdf(type) {
+  const button = $(type === 'menu' ? 'menu-pdf' : 'shop-pdf');
+  const status = $(type === 'menu' ? 'menu-pdf-status' : 'shop-pdf-status');
+  if (!state.generated || !result || result.projection > result.budget) return;
+  try {
+    status.textContent = 'Preparing your PDF…';button.disabled = true;
+    const bytes = await JAGPDF.create({state:JSON.parse(JSON.stringify(state)), result:JSON.parse(JSON.stringify(result)), type});
+    const safeClub = state.club.replace(/[^a-z0-9]+/gi, '-').replace(/^-|-$/g, '');
+    saveBlob(new Blob([bytes], {type:'application/pdf'}), `JAG-${safeClub}-${type}-${state.weekDate}.pdf`);
+    status.textContent = type === 'menu' ? 'Display menu PDF downloaded.' : 'Shopping list PDF downloaded.';
+  } catch (error) {status.textContent = error.message;}
+  finally {button.disabled = false;}
+}
+$('menu-pdf').addEventListener('click', () => pdf('menu'));
+$('shop-pdf').addEventListener('click', () => pdf('shopping'));
+window.JAGApp = {getState:() => JSON.parse(JSON.stringify(state)), getResult:() => result, generate};
 mount();

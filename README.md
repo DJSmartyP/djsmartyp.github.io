@@ -4,13 +4,13 @@ A mobile-friendly, static snack planner for Junior Adventures Group club teams. 
 
 ## Features
 
-- Breakfast, after-school, or combined sessions, with daily attendance and menu choices.
-- Whole-club food exclusions. Menus containing excluded ingredients are replaced where possible; impossible combinations are blocked.
+- Breakfast, after-school, or combined sessions, with daily attendance. The planner generates the menu after the club enters its fixed period budget and number of weeks.
+- Individual ingredients can be removed from the planning pool. If no allowed menu fits the budget, the tool explains that it cannot make a plan.
 - Food totals, delivery/collection and small-order charges displayed separately. One order each week, with editable fees and thresholds.
 - Monthly/period budget divided across a chosen number of weeks. Forecast repeats the current week, buying fresh full packs each week rather than assuming leftover carry-forward.
 - Editable pack prices, usable pack sizes and existing stock. Whole packs are rounded up after stock is subtracted.
-- Site-personalised A4 PDF noticeboard menu: breakfast + after-school or after-school only, plus breakfast-only as an additional option. Staff shopping and budget pages are optional and separate from the noticeboard page.
-- Downloadable text shopping lists, clipboard copy, print and browser-local plan saving.
+- Separate printable A4 PDFs: a purple JAG noticeboard menu styled after the supplied approved-food sheet, and a practical shopping list with costs.
+- Downloadable text shopping lists, clipboard copy and browser-local plan saving.
 
 ## Run
 
@@ -46,7 +46,7 @@ Food exclusions operate on ingredients, not on allergens in every packaged produ
 ## Source layout
 
 - `catalogue.js`: products, reference prices, estimated yields and recipes.
-- `planner.js`: calculation engine.
+- `planner.js`: calculation and budget-constrained menu generator.
 - `app.js`: browser interface, exclusions, saving and exports.
 - `pdf-output.js`: branded PDF layouts.
 - `assets/`: supplied company logo, including a PNG for PDF embedding.
