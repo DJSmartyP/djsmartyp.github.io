@@ -16,33 +16,36 @@ async function create({state,result,type='menu'},options={}){
  const date=()=>new Date(state.weekDate+'T12:00:00').toLocaleDateString('en-GB',{day:'numeric',month:'long',year:'numeric'});
  const sessions=state.session==='both'?['breakfast','after']:[state.session];
  function badge(page,x,y,size){page.drawCircle({x:x+size/2,y:y+size/2,size:size/2+7,color:white});page.drawImage(logo,{x:x+5,y:y+3,width:size-10,height:size-5});}
- function menu(){
-  const p=pdf.addPage([W,H]);p.drawRectangle({x:0,y:0,width:W,height:H,color:purple});
-  p.drawCircle({x:W-10,y:H-7,size:100,color:rgb(.40,.18,.59)});p.drawCircle({x:5,y:20,size:90,color:rgb(.40,.18,.59)});
-  badge(p,28,H-123,82);write(p,'JUNIOR ADVENTURES GROUP',145,H-45,9,yellow,bold);
-  fit(p,'Our Snack Menu',143,H-92,W-175,34,22,white,play);
-  p.drawRectangle({x:143,y:H-108,width:313,height:7,color:yellow,rotate:lib.degrees(-2)});
-  fit(p,state.club,40,H-156,W-80,22,15,yellow,play);
-  write(p,'Week commencing '+date(),41,H-181,11,white,bold);
-  write(p,sessions.length===2?'BREAKFAST + AFTER SCHOOL':sessions[0]==='breakfast'?'BREAKFAST CLUB':'AFTER SCHOOL CLUB',41,H-201,9,white,bold);
-  const rowH=sessions.length===2?93:88,top=H-232;
-  for(let i=0;i<5;i++){
-   const y=top-i*rowH;
-   p.drawRectangle({x:35,y:y-rowH+6,width:W-70,height:rowH-7,color:[white,rose,mint,yellow,white][i]});
-   p.drawRectangle({x:35,y:y-rowH+6,width:10,height:rowH-7,color:yellow});
-   write(p,DAYS[i].toUpperCase(),52,y-21,15,purple,play);
-   let lineY=y-40;
-   for(const session of sessions){
+ async function menu(){
+  for(const session of sessions){
+   const isBreakfast=session==='breakfast',asset=isBreakfast?'breakfast-art.png':'after-school-art.png';
+   let art;try{const bytes=(isBreakfast?options.breakfastArtBytes:options.afterArtBytes)||await fetch(new URL('assets/'+asset,document.baseURI)).then(r=>{if(!r.ok)throw Error();return r.arrayBuffer();});art=await pdf.embedPng(bytes);}catch{throw Error('Menu artwork could not load. Refresh and try again.');}
+   const p=pdf.addPage([W,H]);p.drawRectangle({x:0,y:0,width:W,height:H,color:purple});
+   p.drawCircle({x:W+20,y:H+20,size:155,color:rgb(.39,.17,.56)});
+   p.drawCircle({x:-40,y:-20,size:130,color:rgb(.39,.17,.56)});
+   badge(p,29,H-113,77);
+   write(p,'JUNIOR ADVENTURES GROUP',139,H-40,9,yellow,bold);
+   fit(p,isBreakfast?'Breakfast Club':'After-School Club',137,H-82,W-169,32,23,white,play);
+   p.drawRectangle({x:138,y:H-98,width:W-186,height:6,color:yellow,rotate:lib.degrees(-2)});
+   fit(p,state.club,40,H-140,W-80,20,14,yellow,play);
+   write(p,'Week commencing '+date(),41,H-162,10,white,bold);
+   p.drawRectangle({x:35,y:H-328,width:W-70,height:143,color:rgb(.36,.13,.52)});
+   p.drawImage(art,{x:W/2-190,y:H-341,width:380,height:178});
+   write(p,isBreakfast?'RISE, SHINE & SNACK!':'READY FOR AN AFTER-SCHOOL BITE?',45,H-351,15,yellow,play);
+   const top=H-368,rowH=70;
+   for(let i=0;i<5;i++){
+    const y=top-i*rowH,fill=[white,rose,mint,yellow,white][i];
+    p.drawRectangle({x:35,y:y-rowH+6,width:W-70,height:rowH-8,color:fill});
+    p.drawCircle({x:72,y:y-32,size:22,color:purple});
+    write(p,DAYS[i].slice(0,3).toUpperCase(),57,y-36,11,white,bold);
     const day=result.days.find(item=>item.index===i&&item.session===session);
-    const label=sessions.length===2?(session==='breakfast'?'Breakfast: ':'After school: '):'';
     const desc=!day||!day.count?'Club closed':day.recipe+' + '+day.fruit;
-    lineY=writeLines(p,label+desc,52,lineY,W-105,sessions.length===2?10.5:12,ink,regular,sessions.length===2?12:15)-3;
+    fit(p,desc,106,y-37,W-160,13,10,ink,bold);
    }
+   write(p,'GOOD FOOD. HAPPY ADVENTURES.',40,103,15,yellow,play);
+   writeLines(p,'Please ask the club team about ingredients and dietary needs. Menus may change with availability. Water is available.',40,81,W-80,8.5,white,regular,11);
+   write(p,'JAG Snack Planner  |  '+(isBreakfast?'Breakfast':'After school'),40,23,8,white,bold);
   }
-  const bottom=top-5*rowH;
-  write(p,'GOOD FOOD. HAPPY ADVENTURES.',40,bottom-17,15,yellow,play);
-  writeLines(p,'Please ask the club team about ingredients and dietary needs. Menus may change with availability. Water is available.',40,bottom-38,W-80,8.5,white,regular,11);
-  write(p,'JAG Snack Planner',40,23,8,white,bold);
  }
  function shopping(){
   let p=pdf.addPage([W,H]),y=H-171;
@@ -69,7 +72,7 @@ async function create({state,result,type='menu'},options={}){
   for(const note of notes){if(y<90){footer(p);p=pdf.addPage([W,H]);header(p,true);y=H-180;}y=writeLines(p,note,M,y,W-2*M,8,ink,regular,11)-8;}
   footer(p);
  }
- if(type==='shopping')shopping();else menu();
+ if(type==='shopping')shopping();else await menu();
  pdf.setTitle(state.club+(type==='shopping'?' - Shopping list':' - Weekly snack menu'));pdf.setAuthor('JAG Snack Planner');
  return pdf.save();
 }
