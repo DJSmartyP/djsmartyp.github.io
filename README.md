@@ -9,7 +9,7 @@ A mobile-friendly, static snack planner for Junior Adventures Group club teams. 
 - Food totals, delivery/collection and small-order charges displayed separately. One order each week, with editable fees and thresholds.
 - Monthly/period budget divided across a chosen number of weeks. Forecast repeats the current week, buying fresh full packs each week rather than assuming leftover carry-forward.
 - Editable pack prices, usable pack sizes and existing stock. Whole packs are rounded up after stock is subtracted.
-- Separate printable A4 PDFs: illustrated purple JAG noticeboard pages for breakfast and after-school sessions, styled after the supplied approved-food sheet, and a practical shopping list with costs. The meal text is added when a plan is generated.
+- Separate printable A4 PDFs: fixed illustrated background images for breakfast and after-school noticeboard pages, styled after the supplied approved-food sheet, with the club/week and generated meals placed over the blank boxes. The purple header has the white JAG logo without a circle. The shopping list remains a practical PDF with costs.
 - Downloadable text shopping lists, clipboard copy and browser-local plan saving.
 
 ## Run
@@ -49,7 +49,8 @@ Food exclusions operate on ingredients, not on allergens in every packaged produ
 - `planner.js`: calculation and budget-constrained menu generator.
 - `app.js`: browser interface, exclusions, saving and exports.
 - `pdf-output.js`: branded PDF layouts.
-- `assets/`: supplied company logo and generated breakfast/after-school illustrations for the PDF.
+- `assets/`: supplied company logo, a white logo variant, food illustrations and the finished fixed menu backgrounds.
+- `tools/build-menu-templates.ps1`: rebuilds the two menu background PNGs from the illustrations and logo.
 - `tests/planner.test.cjs`: pack rounding, fee thresholds, budget forecasts, exclusions and combined session checks.
 
 The supplied JAG logo remains the property of its owner. The original approved-food PDF is not included in this repository.
