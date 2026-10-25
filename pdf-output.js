@@ -18,15 +18,15 @@ async function create({state,result,type='menu'},options={}){
  async function menu(){
   for(const session of sessions){
    const isBreakfast=session==='breakfast',asset=isBreakfast?'menu-template-breakfast.png':'menu-template-after-school.png';
-   let template;try{const bytes=(isBreakfast?options.breakfastTemplateBytes:options.afterTemplateBytes)||await fetch(new URL('assets/'+asset,document.baseURI)).then(r=>{if(!r.ok)throw Error();return r.arrayBuffer();});template=await pdf.embedPng(bytes);}catch{throw Error('Menu template could not load. Refresh and try again.');}
+   let template;try{const bytes=(isBreakfast?options.breakfastTemplateBytes:options.afterTemplateBytes)||await fetch(new URL('assets/'+asset+'?v=2',document.baseURI)).then(r=>{if(!r.ok)throw Error();return r.arrayBuffer();});template=await pdf.embedPng(bytes);}catch{throw Error('Menu template could not load. Refresh and try again.');}
    const p=pdf.addPage([W,H]);p.drawImage(template,{x:0,y:0,width:W,height:H});
    fit(p,state.club,40,H-149,286,16,10,white,bold);
    fit(p,date(),355,H-149,195,15,10,white,bold);
    for(let i=0;i<5;i++){
     const day=result.days.find(item=>item.index===i&&item.session===session);
     const desc=!day||!day.count?'Club closed':day.recipe+' + '+day.fruit;
-    const baseline=H-(848+i*140+73)/2;
-    fit(p,desc,110,baseline,435,16,11,ink,bold);
+    const baseline=H-(464+i*194+87)/2;
+    fit(p,desc,145,baseline,355,16,11,ink,bold);
    }
   }
  }
