@@ -42,7 +42,10 @@ function renderDays() {
 }
 function renderIngredients() {
   let group = '';
-  $('exclusions').innerHTML = Object.entries(C.products).map(([id, product]) => {
+  const query=$('food-search').value.trim().toLowerCase();
+  const matches=Object.entries(C.products).filter(([,product])=>product.name.toLowerCase().includes(query)).sort((a,b)=>a[1].group.localeCompare(b[1].group)||a[1].name.localeCompare(b[1].name));
+  $('ingredient-count').textContent=`${matches.length} of ${Object.keys(C.products).length} approved foods shown`;
+  $('exclusions').innerHTML = matches.map(([id, product]) => {
     const heading = group !== product.group ? `<h3>${esc(product.group)}</h3>` : '';
     group = product.group;
     return heading + `<label><input type="checkbox" data-exclude="${id}" ${state.excluded.includes(id) ? 'checked' : ''}><span>${esc(product.name)}</span></label>`;
@@ -132,9 +135,10 @@ function mount() {
 }
 
 $('planner-form').addEventListener('submit', event => {event.preventDefault();generate();});
+$('food-search').addEventListener('input', renderIngredients);
 $('planner-form').addEventListener('change', event => {
   const el = event.target;
-  if (el.dataset.exclude) state.excluded = [...$('exclusions').querySelectorAll('input:checked')].map(input => input.dataset.exclude);
+  if (el.dataset.exclude) state.excluded = el.checked ? [...new Set([...state.excluded,el.dataset.exclude])] : state.excluded.filter(id=>id!==el.dataset.exclude);
   else if (el.dataset.day !== undefined) {
     const days = el.dataset.group === 'breakfast-days' ? state.breakfastDays : state.days;
     days[Number(el.dataset.day)].count = Number(el.value);

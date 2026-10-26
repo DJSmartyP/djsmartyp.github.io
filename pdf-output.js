@@ -12,6 +12,7 @@ async function create({state,result,type='menu'},options={}){
  const write=(page,value,x,y,size=11,color=ink,font=regular)=>page.drawText(clean(value),{x,y,size,color,font});
  const writeLines=(page,value,x,y,width,size=11,color=ink,font=regular,leading=size*1.25)=>{for(const line of wrap(value,font,size,width)){write(page,line,x,y,size,color,font);y-=leading;}return y;};
  const fit=(page,value,x,y,width,size,min,color,font)=>{while(font.widthOfTextAtSize(clean(value),size)>width&&size>min)size-=.5;return writeLines(page,value,x,y,width,size,color,font,size*1.15);};
+ const menuLine=(page,value,x,y,width,size,font,color)=>{while(font.widthOfTextAtSize(clean(value),size)>width&&size>9)size-=.5;write(page,value,x,y,size,color,font);};
  let logo;if(type==='shopping')try{const bytes=options.logoBytes||await fetch(new URL('assets/jag-logo-white.png',document.baseURI)).then(r=>{if(!r.ok)throw Error();return r.arrayBuffer();});logo=await pdf.embedPng(bytes);}catch{throw Error('JAG logo could not load. Refresh and try again.');}
  const date=()=>new Date(state.weekDate+'T12:00:00').toLocaleDateString('en-GB',{day:'numeric',month:'long',year:'numeric'});
  const sessions=state.session==='both'?['breakfast','after']:[state.session];
@@ -24,9 +25,12 @@ async function create({state,result,type='menu'},options={}){
    fit(p,date(),355,H-149,195,15,10,white,bold);
    for(let i=0;i<5;i++){
     const day=result.days.find(item=>item.index===i&&item.session===session);
-    const desc=!day||!day.count?'Club closed':day.recipe+' + '+day.fruit;
-    const baseline=H-(464+i*194+87)/2;
-    fit(p,desc,145,baseline,355,16,11,ink,bold);
+    const top=464+i*194;
+    if(!day||!day.count)menuLine(p,'Club closed',145,H-(top+92)/2,355,16,bold,ink);
+    else {
+     menuLine(p,day.recipe,145,H-(top+71)/2,355,15,bold,ink);
+     menuLine(p,'Fruit: '+day.fruit,145,H-(top+119)/2,355,12,regular,ink);
+    }
    }
   }
  }
@@ -51,7 +55,7 @@ async function create({state,result,type='menu'},options={}){
    y=writeLines(p,detail,M+18,y-nameLines.length*12-2,W-2*M-40,8,ink,regular,10)-13;
   }
   if(!rows.length){write(p,'Usable stock covers this week. No packs to buy.',M,y,11,ink);y-=30;}
-  const notes=[`Budget ${cash(result.budget)} across ${result.weeks} weeks. Forecast repeats this weekly shop with fresh full packs and fees each week.`,`Prices researched 22 October 2026. Some are planning allowances. Check current prices, pack sizes, availability and delivery charges before ordering.`,`Ingredient exclusions do not confirm allergen suitability. Check labels, dietary records, storage and use-by dates.${state.excluded?.length?' Excluded: '+state.excluded.map(id=>root.JAGCatalogue.products[id]?.name||id).join(', ')+'.':''}`];
+  const notes=[`Budget ${cash(result.budget)} across ${result.weeks} weeks. Forecast repeats this weekly shop with fresh full packs and fees each week.`,`Some reference prices were researched 22 October 2026. New foods use planning allowances. Check current prices, pack sizes, availability and delivery charges before ordering.`,`Ingredient exclusions do not confirm allergen suitability. Check labels, dietary records, storage and use-by dates.${state.excluded?.length?' Excluded: '+state.excluded.map(id=>root.JAGCatalogue.products[id]?.name||id).join(', ')+'.':''}`];
   for(const note of notes){if(y<90){footer(p);p=pdf.addPage([W,H]);header(p,true);y=H-180;}y=writeLines(p,note,M,y,W-2*M,8,ink,regular,11)-8;}
   footer(p);
  }

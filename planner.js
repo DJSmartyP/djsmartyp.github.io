@@ -17,11 +17,12 @@ function calculate(state){
   if(!recipe||recipe.session!==day.session)throw new Error('Choose a menu for the selected club.');
   children+=count;
   const ingredients={...recipe.ingredients};
-  if(!['banana','apple','satsuma'].includes(day.fruit))throw new Error('Choose an approved fruit.');
+  if(!catalogue.fruitIds.includes(day.fruit))throw new Error('Choose an approved fruit.');
   ingredients[day.fruit]=1;
   if(count>0&&Object.keys(ingredients).some(id=>excluded.has(id)))throw new Error('This menu contains an excluded food. Choose another menu.');
+  if(catalogue.limitedWeeklyIds.some(id=>ingredients[id]&&schedule.filter(item=>item.count>0&&catalogue.recipes[item.recipe]?.ingredients[id]).length>2))throw new Error('Jam and honey may each be used on no more than two club sessions per week.');
   for(const [id,amount] of Object.entries(ingredients)){
-   const perChild=['hummus','spread'].includes(id)?Math.min(amount*scale,state.session==='both'?5:10):amount*scale;
+   const perChild=catalogue.condimentIds.includes(id)?Math.min(amount*scale,state.session==='both'?5:10):amount*scale;
    needs[id]=(needs[id]||0)+perChild*count;
   }
   days.push({index,session:day.session,count,recipe:recipe.name,fruit:catalogue.products[day.fruit].name});
@@ -52,7 +53,7 @@ function generate(state){
  const weeks=Math.floor(clamp(state.weeks,1,52,4));
  if(!budget)throw new Error('Enter a period budget before generating a plan.');
  const excluded=new Set(state.excluded||[]);
- const fruits=['banana','apple','satsuma'].filter(id=>!excluded.has(id));
+ const fruits=catalogue.fruitIds.filter(id=>!excluded.has(id));
  if(!fruits.length)throw new Error('Allow at least one fruit to generate a plan.');
  const slots=[];
  const primary=state.session==='breakfast'?'breakfast':'after';
@@ -65,21 +66,20 @@ function generate(state){
  for(const session of new Set(slots.filter(slot=>slot.count).map(slot=>slot.session))){
   options[session]=Object.entries(catalogue.recipes)
    .filter(([,recipe])=>recipe.session===session&&!Object.keys(recipe.ingredients).some(id=>excluded.has(id)))
-   .flatMap(([id,recipe])=>fruits.map(fruit=>({id,recipe,fruit,family:['chicken','cheese','hummus','oats','flakes'].find(food=>recipe.ingredients[food])||'toast'})));
+   .flatMap(([id,recipe])=>fruits.map(fruit=>({id,recipe,fruit,family:Object.keys(recipe.ingredients).find(food=>!['bread','pitta','wraps','milk','spread','carrot','cucumber','pepper'].includes(food))||'toast'})));
   if(!options[session].length)throw new Error(`No approved ${session==='after'?'after-school':'breakfast'} menu remains with these exclusions.`);
  }
  const scale=clamp(state.portionPercent,50,200,100)/100;
  const extra=1+clamp(state.buffer,0,30)/100;
- const productIds=Object.keys(catalogue.products);
- const unitCost=needs=>productIds.reduce((sum,id)=>{
-  const need=needs[id]||0;if(!need)return sum;
+ const unitCost=needs=>Object.entries(needs).reduce((sum,[id,need])=>{
+  if(!need)return sum;
   const product=catalogue.products[id],custom=state.products?.[id]||{};
   const size=clamp(custom.size??product.size,.01,100000,product.size);
   const stock=clamp(custom.stock,0,100000);
   const price=cents(clamp(custom.price??product.price,0,1000,product.price));
   return sum+Math.ceil(Math.max(0,(need*extra-stock)/size-1e-9))*price;
  },0);
- const seed={needs:{},plan:[],recipes:{},families:{},fruits:{},lastRecipe:'',lastFruit:'',penalty:0,cost:0};
+ const seed={needs:{},plan:[],recipes:{},families:{},fruits:{},limited:{},lastRecipe:'',lastFruit:'',penalty:0,cost:0};
  let cheap=[seed],varied=[seed];
  for(const slot of slots){
   if(!slot.count){
@@ -89,24 +89,26 @@ function generate(state){
   const expand=beam=>{
    const next=[];
    for(const item of beam)for(const option of options[slot.session]){
+    const limitedId=catalogue.limitedWeeklyIds.find(id=>option.recipe.ingredients[id]);
+    if(limitedId&&(item.limited[limitedId]||0)>=2)continue;
     const needs={...item.needs};
     for(const [id,amount] of Object.entries(option.recipe.ingredients)){
-     const perChild=['hummus','spread'].includes(id)?Math.min(amount*scale,state.session==='both'?5:10):amount*scale;
+     const perChild=catalogue.condimentIds.includes(id)?Math.min(amount*scale,state.session==='both'?5:10):amount*scale;
      needs[id]=(needs[id]||0)+perChild*slot.count;
     }
     needs[option.fruit]=(needs[option.fruit]||0)+scale*slot.count;
     const cost=unitCost(needs);
     const repeats=item.recipes[option.id]||0,fruitRepeats=item.fruits[option.fruit]||0;
     const penalty=item.penalty+repeats*35+fruitRepeats*12+(item.lastRecipe===option.id?180:0)+(item.lastFruit===option.fruit?70:0);
-    next.push({needs,plan:[...item.plan,{...slot,recipe:option.id,fruit:option.fruit}],recipes:{...item.recipes,[option.id]:repeats+1},families:{...item.families,[option.family]:(item.families[option.family]||0)+1},fruits:{...item.fruits,[option.fruit]:fruitRepeats+1},lastRecipe:option.id,lastFruit:option.fruit,penalty,cost});
+    next.push({needs,plan:[...item.plan,{...slot,recipe:option.id,fruit:option.fruit}],recipes:{...item.recipes,[option.id]:repeats+1},families:{...item.families,[option.family]:(item.families[option.family]||0)+1},fruits:{...item.fruits,[option.fruit]:fruitRepeats+1},limited:limitedId?{...item.limited,[limitedId]:(item.limited[limitedId]||0)+1}:item.limited,lastRecipe:option.id,lastFruit:option.fruit,penalty,cost});
    }
    return next;
   };
   const candidates=expand([...new Set([...cheap,...varied])]);
   if(!candidates.length)return {status:'over',weeklyCap:budget/weeks};
-  cheap=[...candidates].sort((a,b)=>a.cost-b.cost||a.penalty-b.penalty).slice(0,250);
+  cheap=[...candidates].sort((a,b)=>a.cost-b.cost||a.penalty-b.penalty).slice(0,35);
   const varietyCost=item=>item.cost+item.penalty-Object.keys(item.recipes).length*250-Object.keys(item.families).length*450-Object.keys(item.fruits).length*100;
-  varied=[...candidates].sort((a,b)=>varietyCost(a)-varietyCost(b)||a.cost-b.cost).slice(0,250);
+  varied=[...candidates].sort((a,b)=>varietyCost(a)-varietyCost(b)||a.cost-b.cost).slice(0,35);
  }
  let best=null,cheapest=null;
  for(const candidate of new Set([...cheap,...varied])){
@@ -126,9 +128,9 @@ function generate(state){
   const families=new Set(),recipes=new Set(),fruits=new Set(),veg=new Set();
   for(const day of active){
    const recipe=catalogue.recipes[day.recipe];
-   families.add(['chicken','cheese','hummus','oats','flakes'].find(id=>recipe.ingredients[id])||'toast');
+   families.add(Object.keys(recipe.ingredients).find(id=>!['bread','pitta','wraps','milk','spread','carrot','cucumber','pepper'].includes(id))||'toast');
    recipes.add(day.recipe);fruits.add(day.fruit);
-   for(const id of ['carrot','cucumber','pepper'])if(recipe.ingredients[id])veg.add(id);
+   for(const id of ['carrot','cucumber','pepper','cherryTomatoes','sweetcorn','avocado','spinach'])if(recipe.ingredients[id])veg.add(id);
   }
   let repeats=0;
   for(let i=1;i<active.length;i++){if(active[i].recipe===active[i-1].recipe)repeats+=2;if(active[i].fruit===active[i-1].fruit)repeats++;}
@@ -144,7 +146,7 @@ function generate(state){
     target[slot.index].recipe=option.id;target[slot.index].fruit=option.fruit;
     const q=quality([...days,...(state.session==='both'?breakfastDays:[])]);
     if(q<=score)continue;
-    const result=calculate({...state,days,breakfastDays});
+    let result;try{result=calculate({...state,days,breakfastDays});}catch{continue;}
     if(result.projection>budget)continue;
     best={status:'ok',days,breakfastDays,result,score:q};score=q;improved=true;
    }
