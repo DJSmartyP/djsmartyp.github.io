@@ -138,6 +138,7 @@ $('planner-form').addEventListener('submit', event => {event.preventDefault();ge
 $('food-search').addEventListener('input', renderIngredients);
 $('planner-form').addEventListener('change', event => {
   const el = event.target;
+  if (el.id === 'food-search') return;
   if (el.dataset.exclude) state.excluded = el.checked ? [...new Set([...state.excluded,el.dataset.exclude])] : state.excluded.filter(id=>id!==el.dataset.exclude);
   else if (el.dataset.day !== undefined) {
     const days = el.dataset.group === 'breakfast-days' ? state.breakfastDays : state.days;
