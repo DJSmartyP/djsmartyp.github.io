@@ -159,7 +159,7 @@ footer{margin-bottom:2px}
 (function(){
 'use strict';
 var STORE='djsmarty-one-done-level4-v6';
-var state={wave:0,racks:['','',''],words:['','',''],finished:false,visible:3,mode:'change',plans:[],planChoice:0,planReady:false};
+var state={wave:0,racks:['','',''],words:['','',''],finished:false,visible:3,mode:'change',plans:[],planChoice:0,planReady:false,planLocked:false};
 var planTimer=null,planGeneration=0;
 function shared(){return state.mode==='same'}
 function rackIndex(){return shared()?0:state.wave}
@@ -182,6 +182,7 @@ try{
   state.plans=Array.isArray(raw.plans)?raw.plans.filter(function(p){return Array.isArray(p)&&p.length===3&&p.every(function(w,i){return typeof w==='string'&&w.length===i+4})}):[];
   state.planChoice=Math.min(Math.max(0,Number(raw.planChoice)||0),Math.max(0,state.plans.length-1));
   state.planReady=!!raw.planReady&&state.plans.length>0;
+  state.planLocked=!!raw.planLocked&&state.planReady;
  }
 }catch(e){}
 // Avoid obvious proper nouns, profanity and unreliable quick-pick suggestions.
@@ -301,7 +302,7 @@ function buildPlan(){
  if(planTimer)clearTimeout(planTimer);
  ++planGeneration;
  if(!shared())return;
- state.plans=solvePlans();state.planChoice=0;state.planReady=state.plans.length>0;
+ state.plans=solvePlans();state.planChoice=0;state.planReady=state.plans.length>0;state.planLocked=false;
  save();render();
 }
 function renderShared(){
@@ -309,8 +310,9 @@ function renderShared(){
  var solved=state.planReady&&state.plans.length>0;
  var rack=state.racks[0],uniqueCount=new Set(rack).size;
  get('shared-count').textContent=uniqueCount+' wall letters';
- get('solve-now').hidden=solved||state.finished;
- get('edit-letters').hidden=!solved;
+ get('solve-now').hidden=(solved&&state.planLocked)||state.finished;
+ get('solve-now').textContent=solved?'FOCUS ON THE 3 WORDS':'Find all 3 words';
+ get('edit-letters').hidden=!solved||!state.planLocked;
  get('plan-tabs').hidden=!solved||state.plans.length<2;
  get('plan-note').hidden=!solved;
  var status=get('shared-status'),list=get('plan-list'),tabs=get('plan-tabs');
@@ -347,9 +349,13 @@ function renderShared(){
 }
 function changeMode(mode){
  if(state.mode===mode)return;
- if((state.words.some(Boolean)||state.racks.some(Boolean))&&!confirm('Switching modes starts a new attempt and clears the current letters and words. Continue?'))return;
  if(planTimer)clearTimeout(planTimer);++planGeneration;
- state={wave:0,racks:['','',''],words:['','',''],finished:false,visible:3,mode:mode,plans:[],planChoice:0,planReady:false};
+ if(mode==='change'&&shared()&&state.wave>0&&!state.finished){
+  state.mode='change';state.racks[state.wave]='';state.plans=[];state.planReady=false;state.planLocked=false;
+  save();setError('');render();return;
+ }
+ if((state.words.some(Boolean)||state.racks.some(Boolean))&&!confirm('Switching modes starts a new attempt and clears the current letters and words. Continue?'))return;
+ state={wave:0,racks:['','',''],words:['','',''],finished:false,visible:3,mode:mode,plans:[],planChoice:0,planReady:false,planLocked:false};
  save();setError('');render();
 }
 function setError(message){
@@ -367,7 +373,7 @@ function record(word,source){
  if(changed)for(var i=state.wave+1;i<3;i++){state.words[i]='';state.racks[i]=''}
  if(state.wave===2)state.finished=true;
  else{state.wave++;state.finished=false}
- if(shared()&&!followsPlan){state.plans=solvePlans();state.planChoice=0;state.planReady=state.plans.length>0}
+ if(shared()&&!followsPlan){state.plans=solvePlans();state.planChoice=0;state.planReady=state.plans.length>0;state.planLocked=true}
  state.visible=3;get('played').value='';get('manual-backdrop').hidden=true;setError('');save();render();
  window.scrollTo(0,0);
 }
@@ -375,7 +381,7 @@ function toggle(letter){
  if(state.finished)return;
  var idx=rackIndex(),s=state.racks[idx],ix=s.indexOf(letter);
  state.racks[idx]=ix>=0?s.slice(0,ix)+s.slice(ix+1):s+letter;
- if(shared()){state.planReady=false;state.plans=[]}
+ if(shared()){state.planReady=false;state.plans=[];state.planLocked=false}
  state.visible=3;setError('');save();renderQuick();if(shared())schedulePlan();
 }
 var alphabet='ABCDEFGHIJKLMNOPQRSTUVWXYZ';
@@ -433,7 +439,7 @@ function render(){
  get('roundname').textContent='ROUND '+(wave+1)+' · '+required(wave)+' LETTERS';
  var beforeList=state.words.slice(0,wave).filter(Boolean);
  get('used').textContent=state.words[wave]?'This round: '+state.words[wave].toUpperCase():beforeList.length?'Used: '+beforeList.map(function(x){return x.toUpperCase()}).join(' / '):'No letters used yet';
- get('entry').hidden=finished||(shared()&&state.planReady&&state.plans.length>0);
+ get('entry').hidden=finished||(shared()&&state.planReady&&state.plans.length>0&&state.planLocked);
  get('answers').hidden=finished||shared();
  get('shared').hidden=!shared();
  get('manual-open').disabled=finished;
@@ -457,8 +463,8 @@ function render(){
   get('finish').append(strong,info);
  }else{if(!shared())rankedFor(wave,usedMask(before(wave)));if(get('entry').hidden&&shared())renderShared();else renderQuick()}
 }
-get('undo').addEventListener('click',function(){var idx=rackIndex(),s=state.racks[idx];if(s){state.racks[idx]=s.slice(0,-1);if(shared()){state.plans=[];state.planReady=false}state.visible=3;setError('');save();renderQuick();if(shared())schedulePlan()}});
-get('clear').addEventListener('click',function(){state.racks[rackIndex()]='';if(shared()){state.plans=[];state.planReady=false}state.visible=3;setError('');save();renderQuick();if(shared())schedulePlan()});
+get('undo').addEventListener('click',function(){var idx=rackIndex(),s=state.racks[idx];if(s){state.racks[idx]=s.slice(0,-1);if(shared()){state.plans=[];state.planReady=false;state.planLocked=false}state.visible=3;setError('');save();renderQuick();if(shared())schedulePlan()}});
+get('clear').addEventListener('click',function(){state.racks[rackIndex()]='';if(shared()){state.plans=[];state.planReady=false;state.planLocked=false}state.visible=3;setError('');save();renderQuick();if(shared())schedulePlan()});
 get('more').addEventListener('click',function(){state.visible+=6;save();renderQuick()});
 get('back').addEventListener('click',function(){
  if(state.wave===0)return;
@@ -474,18 +480,21 @@ get('manual-backdrop').addEventListener('click',function(e){if(e.target===get('m
 get('form').addEventListener('submit',function(e){e.preventDefault();record(get('played').value,'typed')});
 get('mode-same').addEventListener('click',function(){changeMode('same')});
 get('mode-change').addEventListener('click',function(){changeMode('change')});
-get('solve-now').addEventListener('click',function(){buildPlan()});
+get('solve-now').addEventListener('click',function(){
+ if(state.planReady&&state.plans.length){state.planLocked=true;save();render();return}
+ buildPlan();if(state.planReady){state.planLocked=true;save();render()}
+});
 get('all-letters').addEventListener('click',function(){
- state.racks[0]='ABCDEFGHIJKLMNOPQRSTUVWXYZ';state.planReady=false;state.plans=[];save();renderQuick();schedulePlan();
+ state.racks[0]='ABCDEFGHIJKLMNOPQRSTUVWXYZ';state.planReady=false;state.planLocked=false;state.plans=[];save();renderQuick();schedulePlan();
 });
 get('edit-letters').addEventListener('click',function(){
  if(state.words.some(Boolean)&&!confirm('Edit wall letters? This will restart the 3-word plan.'))return;
- state.wave=0;state.words=['','',''];state.finished=false;state.planReady=false;state.plans=[];state.planChoice=0;
- save();render();schedulePlan();
+ state.wave=0;state.words=['','',''];state.finished=false;state.planReady=false;state.planLocked=false;state.plans=[];state.planChoice=0;
+ save();render();
 });
 get('reset').addEventListener('click',function(){
  if(!confirm('Restart the three-round badge attempt?'))return;
- state={wave:0,racks:['','',''],words:['','',''],finished:false,visible:3,mode:state.mode,plans:[],planChoice:0,planReady:false};save();get('manual-backdrop').hidden=true;setError('');render()
+ state={wave:0,racks:['','',''],words:['','',''],finished:false,visible:3,mode:state.mode,plans:[],planChoice:0,planReady:false,planLocked:false};save();get('manual-backdrop').hidden=true;setError('');render()
 });
 render();
 if('serviceWorker' in navigator&&location.protocol.startsWith('http'))window.addEventListener('load',function(){navigator.serviceWorker.register('./sw.js').catch(function(){})});
