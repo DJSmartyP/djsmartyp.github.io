@@ -141,7 +141,7 @@ try{
  }
 }catch(e){}
 // Avoid obvious proper nouns, profanity and unreliable quick-pick suggestions.
-var avoid=new Set('fuck shit cunt piss porn rape sexy slut tits dick cock anal arse july june april march monday friday sunday tuesday google yahoo jesus satan israel london paris china japan india africa walmart'.split(' '));
+var avoid=new Set('fuck shit cunt piss porn rape sexy slut tits dick cock anal arse july june april march monday friday sunday tuesday google yahoo jesus satan israel london paris china japan india africa walmart blvd govt dept intl ltds http html https mysql json jpeg pdfs secs mins mins asap fyi btw wtf xbox'.split(' '));
 var words=(window.SPELL_WORDS||[]).filter(function(p){return /^[a-z]{4,6}$/.test(p[0])&&unique(p[0])&&!avoid.has(p[0])})
  .map(function(p){return {word:p[0],freq:Number(p[1])||1,mask:usedMask(p[0]),len:p[0].length}});
 var futureWords=words.filter(function(x){return x.len===5||x.len===6});
@@ -173,7 +173,9 @@ function rankedFor(wave,prior){
   var vowels=(e.word.match(/[aeiou]/g)||[]).length;
   var y=e.word.indexOf('y')>=0?1:0;
   var familiar=Math.max(0,Math.min(1,(e.freq-9500)/10500));
-  var score=80*(total?kept/total:0)+36*familiar-12*vowels-3*y-(e.freq<12000?24:0);
+  // Rare no-vowel strings are often abbreviations rather than playable words.
+  var improbable=(vowels===0&&!y)?30:0;
+  var score=80*(total?kept/total:0)+36*familiar-12*vowels-3*y-(e.freq<12000?24:0)-improbable;
   return {word:e.word,vowels:vowels,score:score,freq:e.freq,mask:e.mask};
  }).sort(function(a,b){return b.score-a.score||b.freq-a.freq||a.word.localeCompare(b.word)});
  return rankingCache[key];
