@@ -41,8 +41,9 @@ main{max-width:530px;margin:auto;padding:9px 10px calc(18px + env(safe-area-inse
 .key{height:42px;min-width:0;position:relative;background:#25334e;border:1px solid #58708c;color:#fff;border-radius:8px;font-size:1.05rem;font-weight:950;transition:background .06s ease}
 .key.selected{background:#3c4250;border-color:#4c5360;color:#8593a9}
 .key.selected:after{content:"✓";position:absolute;right:2px;top:0;font-size:.58rem;color:#a0abc0}
-.key.spent:not(.selected){border-color:#a97954;color:#ffca93}
-.key.spent:not(.selected):before{content:"•";position:absolute;top:-2px;right:4px;color:#fbc18e}
+.key.spent{border-color:#a97954}
+.key.spent:not(.selected){color:#ffca93}
+.key.spent:before{content:"•";position:absolute;top:-2px;right:4px;color:#fbc18e}
 .key:active{transform:scale(.96)}
 .key-placeholder{visibility:hidden}
 .micro{font-size:.69rem;color:#aebbd1;margin:6px 1px 0;line-height:1.2}
@@ -189,7 +190,7 @@ function record(word,source){
  if(state.wave===2)state.finished=true;
  else{state.wave++;state.finished=false}
  state.visible=3;get('played').value='';get('manual').open=false;setError('');save();render();
- window.scrollTo({top:0,behavior:'instant'});
+ window.scrollTo(0,0);
 }
 function toggle(letter){
  if(state.finished)return;
