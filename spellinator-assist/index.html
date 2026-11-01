@@ -111,29 +111,15 @@ footer{margin-bottom:2px}
 <div class="brand">ONE <em>&amp; DONE</em><small>LEVEL 4 · DJ SMARTY · SPELLINATOR</small></div>
 <button type="button" class="subtle" id="manual-open">✓ Played a word</button>
 </header>
-<div class="mode-pick" role="group" aria-label="Choose how Spellinator's letters behave">
-<button id="mode-change" type="button">Changing letters · Recommended<small>Enter each round's letters</small></button>
-<button id="mode-same" type="button">Same letters · Backup<small>Plan 4 + 5 + 6 together</small></button>
-</div>
-<div class="mode-note" id="mode-note"></div>
 <nav class="rounds" id="rounds" aria-label="Round progress"></nav>
 <div class="statusline"><span class="roundname" id="roundname">ROUND 1 · 4 LETTERS</span><span class="used" id="used">Used: none</span></div>
 <section class="panel" id="entry">
-<div class="head"><strong id="entry-title">Tap letters you can see</strong><div class="tools"><button type="button" id="all-letters" hidden>A–Z</button><button type="button" id="undo">↶ Undo</button><button type="button" id="clear">Clear</button></div></div>
+<div class="head"><strong id="entry-title">Tap letters you can see</strong><div class="tools"><button type="button" id="undo">↶ Undo</button><button type="button" id="clear">Clear</button></div></div>
 <div class="rack" id="rack" aria-live="polite"></div>
 <div class="rack-stats" id="rack-stats" aria-live="off">Selected: 0 letters · 0 vowels · 0 consonants</div>
 <div class="keyboard" id="keyboard" role="group" aria-label="Alphabet letter buttons"></div>
-<button id="focus-top" type="button" class="fullplan-button" style="margin-top:8px" hidden>FOCUS ON THE 3 WORDS →</button>
+
 <div class="micro" id="keyboard-note">Grey = selected this round. <span style="color:#ffbf88">Orange dot = used earlier</span> (still tappable, but excluded from words).</div>
-</section>
-<section class="answers" id="shared" hidden>
-<div class="title-row"><strong>YOUR 3-WORD PLAN</strong><span id="shared-count"></span></div>
-<div id="shared-status" class="plan-status"></div>
-<button type="button" id="solve-now" class="fullplan-button">Find all 3 words</button>
-<div id="plan-tabs" class="plan-tabs" hidden></div>
-<div id="plan-list" class="plan-list"></div>
-<div id="plan-note" class="plan-note" hidden>All three suggestions use the same wall letters, with no letter repeated. Read the full plan before starting; tap a word only after the room accepts it. Alternatives are complete replacement plans.</div>
-<button id="edit-letters" class="edit-letters" hidden type="button">Edit wall letters / find new plan</button>
 </section>
 <section class="answers" id="answers">
 <div class="title-row"><strong>BEST WORDS · TAP AFTER PLAYING</strong><span id="matchcount"></span></div>
@@ -161,11 +147,7 @@ footer{margin-bottom:2px}
 (function(){
 'use strict';
 var STORE='djsmarty-one-done-level4-v6';
-var state={wave:0,racks:['','',''],words:['','',''],finished:false,visible:3,mode:'change',plans:[],planChoice:0,planReady:false,planLocked:false};
-var planTimer=null,planGeneration=0;
-function shared(){return state.mode==='same'}
-function rackIndex(){return shared()?0:state.wave}
-function rackLetters(){return state.racks[rackIndex()]}
+var state={wave:0,racks:['','',''],words:['','',''],finished:false,visible:3};
 function normal(s){return String(s||'').toLowerCase().replace(/[^a-z]/g,'')}
 function unique(s){return new Set(s).size===s.length}
 function get(id){return document.getElementById(id)}
@@ -180,11 +162,7 @@ try{
   state.racks=raw.racks.map(function(s){return Array.from(new Set(normal(s))).join('').toUpperCase()});
   state.wave=Math.min(2,Math.max(0,Number(raw.wave)||0));
   state.finished=!!raw.finished;
-  state.mode=raw.mode==='same'?'same':'change';
-  state.plans=Array.isArray(raw.plans)?raw.plans.filter(function(p){return Array.isArray(p)&&p.length===3&&p.every(function(w,i){return typeof w==='string'&&w.length===i+4})}):[];
-  state.planChoice=Math.min(Math.max(0,Number(raw.planChoice)||0),Math.max(0,state.plans.length-1));
-  state.planReady=!!raw.planReady&&state.plans.length>0;
-  state.planLocked=!!raw.planLocked&&state.planReady;
+
  }
 }catch(e){}
 // Avoid obvious proper nouns, profanity and unreliable quick-pick suggestions.
@@ -198,7 +176,7 @@ function validate(word,wave,needRack){
  if(!unique(word))return 'You cannot repeat a letter in one word.';
  var banned=usedMask(before(wave));
  if(usedMask(word)&banned)return 'That repeats letters already used in an earlier round.';
- if(needRack&&((usedMask(word)&usedMask(normal(state.racks[shared()?0:wave])))!==usedMask(word)))return 'Those letters are not all in your current selection.';
+ if(needRack&&((usedMask(word)&usedMask(normal(state.racks[wave])))!==usedMask(word)))return 'Those letters are not all in your current selection.';
  return '';
 }
 var rankingCache={};
@@ -234,158 +212,27 @@ function rank(){
  return rankedFor(state.wave,prior).filter(function(e){return (e.mask&available)===e.mask});
 }
 
-// Same-wall mode searches a *complete* set of three disjoint words.
-// Search occurs after entry pauses, never synchronously on each key press.
-function solvePlans(){
- var rack=normal(state.racks[0]),wall=usedMask(rack);
- if(unique(rack)===false||rack.length<15)return [];
- var prefix=state.words.slice(0,state.wave).map(normal);
- var used=0;
- for(var pi=0;pi<prefix.length;pi++){
-  if(prefix[pi].length!==required(pi)||!unique(prefix[pi]))return [];
-  var pm=usedMask(prefix[pi]);if((pm&wall)!==pm||(pm&used))return [];
-  used|=pm;
- }
- function quality(entry){
-  var n=(entry.word.match(/[aeiou]/g)||[]).length;
-  return entry.freq-(n===0&&!entry.word.includes('y')?1800:0)-(entry.freq<12000?600:0);
- }
- var parts=[4,5,6].map(function(len,index){
-  if(prefix[index]){
-   var match=words.find(function(e){return e.word===prefix[index]});
-   return [{word:prefix[index],mask:usedMask(prefix[index]),quality:match?quality(match):12000,len:len}];
-  }
-  return words.filter(function(e){return e.len===len&&(e.mask&wall)===e.mask})
-   .map(function(e){return {word:e.word,mask:e.mask,quality:quality(e),len:len}})
-   .sort(function(a,b){return b.quality-a.quality||a.word.localeCompare(b.word)});
- });
- var a4=parts[0],a5=parts[1],a6=parts[2];
- if(!a4.length||!a5.length||!a6.length)return [];
- var best=[],cap=50,threshold=-Infinity;
- for(var i=0;i<a4.length;i++){
-  var a=a4[i],maxOuter=a.quality+a5[0].quality*1.08+a6[0].quality*1.16;
-  if(best.length===cap&&maxOuter<=threshold)break;
-  for(var j=0;j<a5.length;j++){
-   var b=a5[j],pair=a.quality+b.quality*1.08;
-   if(best.length===cap&&pair+a6[0].quality*1.16<=threshold)break;
-   if(a.mask&b.mask)continue;
-   for(var k=0;k<a6.length;k++){
-    var c=a6[k],score=pair+c.quality*1.16;
-    if(best.length===cap&&score<=threshold)break;
-    if(c.mask&(a.mask|b.mask))continue;
-    best.push({words:[a.word,b.word,c.word],score:score});
-    best.sort(function(x,y){return y.score-x.score});
-    if(best.length>cap)best.pop();
-    threshold=best.length===cap?best[cap-1].score:-Infinity;
-    break; // a6 is pre-sorted: first compatible word is the best for this pair.
-   }
-  }
- }
- var result=[],usedPairs=new Set();
- for(var q=0;q<best.length&&result.length<3;q++){
-  var key=best[q].words[1]+'|'+best[q].words[2];
-  if(!usedPairs.has(key)){result.push(best[q].words);usedPairs.add(key)}
- }
- for(var q=0;q<best.length&&result.length<3;q++){
-  if(!result.some(function(p){return p.join('|')===best[q].words.join('|')}))result.push(best[q].words);
- }
- return result;
-}
-function schedulePlan(){
- if(planTimer)clearTimeout(planTimer);
- ++planGeneration;
- if(!shared()||state.planReady)return;
- if(state.racks[0].length<15){renderShared();return}
- var token=planGeneration;
- get('shared-status').textContent='Finding a complete set of 4, 5 and 6-letter words…';
- planTimer=setTimeout(function(){if(token===planGeneration&&shared())buildPlan()},250);
-}
-function buildPlan(){
- if(planTimer)clearTimeout(planTimer);
- ++planGeneration;
- if(!shared())return;
- state.plans=solvePlans();state.planChoice=0;state.planReady=state.plans.length>0;state.planLocked=false;
- save();render();
-}
-function renderShared(){
- if(!shared())return;
- var solved=state.planReady&&state.plans.length>0;
- var rack=state.racks[0],uniqueCount=new Set(rack).size;
- get('shared-count').textContent=uniqueCount+' wall letters';
- get('solve-now').hidden=solved||state.finished;
- get('focus-top').hidden=!solved||state.planLocked;
- get('solve-now').textContent=solved?'FOCUS ON THE 3 WORDS':'Find all 3 words';
- get('edit-letters').hidden=!solved||!state.planLocked;
- get('plan-tabs').hidden=!solved||state.plans.length<2;
- get('plan-note').hidden=!solved;
- var status=get('shared-status'),list=get('plan-list'),tabs=get('plan-tabs');
- list.replaceChildren();tabs.replaceChildren();
- if(solved){
-  var plan=state.plans[state.planChoice]||state.plans[0];
-  status.textContent='All 3 words ready. You do not need to touch the app between rounds.';
-  for(var p=0;p<state.plans.length;p++){
-   var choice=document.createElement('button');choice.type='button';choice.textContent='Plan '+String.fromCharCode(65+p);
-   choice.className=p===state.planChoice?'active':'';
-   choice.disabled=state.wave>0;
-   (function(index){choice.addEventListener('click',function(){state.planChoice=index;save();renderShared()})})(p);
-   tabs.appendChild(choice);
-  }
-  for(var i=0;i<3;i++){
-   var btn=document.createElement('button');btn.type='button';btn.className='plan-word'+(state.words[i]?' complete':'')+(i===state.wave&&!state.finished?' current':'');
-   btn.disabled=i!==state.wave||state.finished;
-   var round=document.createElement('span');round.className='round-tag';round.textContent='ROUND '+(i+1);
-   var word=document.createElement('strong');word.textContent=plan[i].toUpperCase();
-   var note=document.createElement('span');note.className='hint-tag';
-   note.textContent=state.words[i]?'✓ DONE':i===state.wave?'TAP AFTER PLAY':'NEXT';
-   btn.append(round,word,note);
-   (function(current,chosen){btn.addEventListener('click',function(){if(current===state.wave&&!state.finished)record(chosen,'selection')})})(i,plan[i]);
-   list.appendChild(btn);
-  }
- }else if(uniqueCount<15){
-  status.textContent='Select the visible wall letters above. At least 15 DIFFERENT letters are needed for 4 + 5 + 6 without repetition ('+uniqueCount+'/15 entered).';
-  get('solve-now').disabled=true;
- }else{
-  status.textContent='No complete 3-word set from these letters in the current dictionary. Check the letters or use the changing-letters mode if the wall changes.';
-  get('solve-now').disabled=false;
- }
- if(solved)get('solve-now').disabled=false;
-}
-function changeMode(mode){
- if(state.mode===mode)return;
- if(planTimer)clearTimeout(planTimer);++planGeneration;
- if(mode==='change'&&shared()&&state.wave>0&&!state.finished){
-  state.mode='change';state.racks[state.wave]='';state.plans=[];state.planReady=false;state.planLocked=false;
-  save();setError('');render();return;
- }
- if((state.words.some(Boolean)||state.racks.some(Boolean))&&!confirm('Switching modes starts a new attempt and clears the current letters and words. Continue?'))return;
- state={wave:0,racks:['','',''],words:['','',''],finished:false,visible:3,mode:mode,plans:[],planChoice:0,planReady:false,planLocked:false};
- save();setError('');render();
-}
 function setError(message){
  get('error').hidden=!message;get('error').textContent=message||'';
  get('modal-error').hidden=!message;get('modal-error').textContent=message||'';
 }
 function record(word,source){
  word=normal(word);
- var err=validate(word,state.wave,source==='selection'||shared());
+ var err=validate(word,state.wave,source==='selection');
  if(err){setError(err);return}
- var chosenPlan=shared()&&state.plans[state.planChoice]?state.plans[state.planChoice]:null;
- var followsPlan=!!chosenPlan&&chosenPlan[state.wave]===word;
  var changed=state.words[state.wave]!==word;
  state.words[state.wave]=word;
  if(changed)for(var i=state.wave+1;i<3;i++){state.words[i]='';state.racks[i]=''}
  if(state.wave===2)state.finished=true;
  else{state.wave++;state.finished=false}
- if(shared()&&!followsPlan){state.plans=solvePlans();state.planChoice=0;state.planReady=state.plans.length>0;state.planLocked=true}
  state.visible=3;get('played').value='';get('manual-backdrop').hidden=true;setError('');save();render();
  window.scrollTo(0,0);
 }
 function toggle(letter){
  if(state.finished)return;
- var idx=rackIndex(),s=state.racks[idx],ix=s.indexOf(letter);
- state.racks[idx]=ix>=0?s.slice(0,ix)+s.slice(ix+1):s+letter;
- if(shared()){state.planReady=false;state.plans=[];state.planLocked=false}
- state.visible=3;setError('');save();renderQuick();if(shared())schedulePlan();
+ var s=state.racks[state.wave],ix=s.indexOf(letter);
+ state.racks[state.wave]=ix>=0?s.slice(0,ix)+s.slice(ix+1):s+letter;
+ state.visible=3;setError('');save();renderQuick();
 }
 var alphabet='ABCDEFGHIJKLMNOPQRSTUVWXYZ';
 alphabet.split('').forEach(function(letter){
@@ -394,7 +241,7 @@ alphabet.split('').forEach(function(letter){
  get('keyboard').appendChild(b);
 });
 function renderQuick(){
- var rack=rackLetters(),prior=new Set(before(state.wave).toUpperCase());
+ var rack=state.racks[state.wave],prior=new Set(before(state.wave).toUpperCase());
  var vowelCount=Array.from(rack).filter(function(ch){return 'AEIOU'.includes(ch)}).length;
  var consonantCount=rack.length-vowelCount;
  get('rack-stats').textContent='Selected: '+rack.length+' letters · '+vowelCount+' vowels · '+consonantCount+' consonants';
@@ -409,7 +256,6 @@ function renderQuick(){
   btn.setAttribute('aria-label',letter+(selected?' selected - tap to remove':spent?' used earlier - can add to wall letters':' - tap to add'));
  }
  get('undo').disabled=!rack;get('clear').disabled=!rack;
- if(shared()){renderShared();return}
  var matches=rank(),area=get('suggestions');area.replaceChildren();
  get('matchcount').textContent=rack?matches.length+' options':'';
  if(!rack||rack.length<required(state.wave)){
@@ -445,18 +291,10 @@ function render(){
  get('roundname').textContent='ROUND '+(wave+1)+' · '+required(wave)+' LETTERS';
  var beforeList=state.words.slice(0,wave).filter(Boolean);
  get('used').textContent=state.words[wave]?'This round: '+state.words[wave].toUpperCase():beforeList.length?'Used: '+beforeList.map(function(x){return x.toUpperCase()}).join(' / '):'No letters used yet';
- get('entry').hidden=finished||(shared()&&state.planReady&&state.plans.length>0&&state.planLocked);
- get('answers').hidden=finished||shared();
- get('shared').hidden=!shared();
+ get('entry').hidden=finished;get('answers').hidden=finished;
  get('manual-open').disabled=finished;
- get('mode-same').classList.toggle('active',shared());
- get('mode-change').classList.toggle('active',!shared());
- get('mode-same').setAttribute('aria-pressed',String(shared()));
- get('mode-change').setAttribute('aria-pressed',String(!shared()));
- get('mode-note').textContent=shared()?'Backup mode: only use this if the same letters remain available in every round. It needs 15 distinct letters across the three words.':'Recommended: players report the wall letters CHANGE between rounds. Enter the visible letters afresh each round. Reported wall mix: about 4 vowels + 11 consonants (Y counts as a consonant). Not verified for Watford.';
- get('entry-title').textContent=shared()?'Tap ALL visible wall letters':'Tap letters you can see';
- get('all-letters').hidden=!shared();
- get('keyboard-note').textContent=shared()?'Keys stay in place; grey means selected. Use A–Z only when all 26 letters really are available.':'Grey = selected in this round. Orange dot = used earlier; you can enter it, but no suggestion will reuse it.';
+ get('entry-title').textContent='Tap new wall letters for Round '+(wave+1);
+ get('keyboard-note').textContent='Grey = selected; orange dot = used earlier and excluded from answers.';
  get('back').disabled=wave===0&&!finished;
  get('played').maxLength=required(wave);
  get('played').value=state.words[wave]?state.words[wave].toUpperCase():'';
@@ -467,10 +305,10 @@ function render(){
   var strong=document.createElement('strong');strong.textContent='3 / 3 ROUNDS RECORDED';
   var info=document.createElement('span');info.textContent=state.words.map(function(w){return w.toUpperCase()}).join(' → ')+' · Check Activate for the badge.';
   get('finish').append(strong,info);
- }else{if(!shared())rankedFor(wave,usedMask(before(wave)));if(get('entry').hidden&&shared())renderShared();else renderQuick()}
+ }else{rankedFor(wave,usedMask(before(wave)));renderQuick()}
 }
-get('undo').addEventListener('click',function(){var idx=rackIndex(),s=state.racks[idx];if(s){state.racks[idx]=s.slice(0,-1);if(shared()){state.plans=[];state.planReady=false;state.planLocked=false}state.visible=3;setError('');save();renderQuick();if(shared())schedulePlan()}});
-get('clear').addEventListener('click',function(){state.racks[rackIndex()]='';if(shared()){state.plans=[];state.planReady=false;state.planLocked=false}state.visible=3;setError('');save();renderQuick();if(shared())schedulePlan()});
+get('undo').addEventListener('click',function(){var s=state.racks[state.wave];if(s){state.racks[state.wave]=s.slice(0,-1);state.visible=3;setError('');save();renderQuick()}});
+get('clear').addEventListener('click',function(){state.racks[state.wave]='';state.visible=3;setError('');save();renderQuick()});
 get('more').addEventListener('click',function(){state.visible+=6;save();renderQuick()});
 get('back').addEventListener('click',function(){
  if(state.wave===0)return;
@@ -484,28 +322,9 @@ get('manual-open').addEventListener('click',function(){
 get('manual-close').addEventListener('click',function(){get('manual-backdrop').hidden=true;setError('')});
 get('manual-backdrop').addEventListener('click',function(e){if(e.target===get('manual-backdrop')){get('manual-backdrop').hidden=true;setError('')}});
 get('form').addEventListener('submit',function(e){e.preventDefault();record(get('played').value,'typed')});
-get('mode-same').addEventListener('click',function(){changeMode('same')});
-get('mode-change').addEventListener('click',function(){changeMode('change')});
-get('solve-now').addEventListener('click',function(){
- if(state.planReady&&state.plans.length){state.planLocked=true;save();render();return}
- buildPlan();if(state.planReady){state.planLocked=true;save();render()}
-});
-get('all-letters').addEventListener('click',function(){
- state.racks[0]='ABCDEFGHIJKLMNOPQRSTUVWXYZ';state.planReady=false;state.planLocked=false;state.plans=[];
- buildPlan();if(state.planReady){state.planLocked=true;save();render()}
-});
-get('focus-top').addEventListener('click',function(){
- if(!shared()||!state.planReady)return;
- state.planLocked=true;save();render();window.scrollTo(0,0);
-});
-get('edit-letters').addEventListener('click',function(){
- if(state.words.some(Boolean)&&!confirm('Edit wall letters? This will restart the 3-word plan.'))return;
- state.wave=0;state.words=['','',''];state.finished=false;state.planReady=false;state.planLocked=false;state.plans=[];state.planChoice=0;
- save();render();
-});
 get('reset').addEventListener('click',function(){
  if(!confirm('Restart the three-round badge attempt?'))return;
- state={wave:0,racks:['','',''],words:['','',''],finished:false,visible:3,mode:state.mode,plans:[],planChoice:0,planReady:false,planLocked:false};save();get('manual-backdrop').hidden=true;setError('');render()
+ state={wave:0,racks:['','',''],words:['','',''],finished:false,visible:3};save();get('manual-backdrop').hidden=true;setError('');render()
 });
 render();
 if('serviceWorker' in navigator&&location.protocol.startsWith('http'))window.addEventListener('load',function(){navigator.serviceWorker.register('./sw.js').catch(function(){})});
