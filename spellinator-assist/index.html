@@ -91,7 +91,7 @@ function hasUnique(str){return new Set(str).size===str.length}
 var dict=(window.SPELL_WORDS||[]).filter(function(p){return /^[a-z]{3,9}$/.test(p[0])&&hasUnique(p[0])}).map(function(p){return {word:p[0],freq:Number(p[1])||1}});
 function save(){try{localStorage.setItem(KEY,JSON.stringify(state))}catch(err){}}
 function usedBefore(wave){return state.words.slice(0,wave).join('')}
-function isSafe(word,wave){var rack=normal(state.racks[wave]);word=normal(word);if(!rack||word.length<3||word.length>9||!hasUnique(word))return false;var available=new Set(rack);var blocked=new Set(usedBefore(wave));for(var i=0;i<word.length;i++)if(!available.has(word[i])||blocked.has(word[i]))return false;return !state.sizes[wave]||word.length===state.sizes[wave]}
+function isSafe(word,wave){var rack=normal(state.racks[wave]);word=normal(word);if(!rack||word.length<3||word.length>9||!hasUnique(word))return false;var available=new Set(rack);var blocked=new Set(normal(usedBefore(wave)));for(var i=0;i<word.length;i++)if(!available.has(word[i])||blocked.has(word[i]))return false;return !state.sizes[wave]||word.length===state.sizes[wave]}
 function getResults(){var wave=state.wave,rack=normal(state.racks[wave]);if(!rack)return [];return dict.filter(function(d){return isSafe(d.word,wave)}).sort(function(a,b){
 var score=function(d){var vowel=(d.word.match(/[aeiou]/g)||[]).length;return Math.log2(d.freq+1)*2+(wave<2?-vowel*1.2:0)};
 return score(b)-score(a)||a.word.localeCompare(b.word)
