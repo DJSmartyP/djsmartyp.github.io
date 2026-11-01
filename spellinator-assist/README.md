@@ -1,19 +1,30 @@
-# Spellinator Assist
+# DJ Smarty — One and Done 2.0
+A focused, single-purpose, mobile-friendly assistant for the **Spellinator level 4** badge at Activate.
 
-A mobile-friendly, unofficial word and badge helper for Activate Spellinator, hosted on GitHub Pages.
+## URL
+https://djsmartyp.github.io/spellinator-assist/
 
-Website: https://djsmartyp.github.io/spellinator-assist/
+## How it works
+1. Start Spellinator level 4 on the real game.
+2. At each wave, **enter the actual letters displayed in the room**. Until you do, the helper shows no suggestions.
+3. Select the word length requested by the game (if known). Every suggested word is made **only from the letters entered for that wave**.
+4. Choose the word you **successfully played**, then press **Next wave**. The helper locks every used letter so it will never suggest that letter again, even if it appears on a later wave.
+5. Enter the new letters for wave 2 and wave 3; these are **separate from earlier entries**. Complete wave 3, then verify the badge in Activate.
 
-## Modes
+The tool allows revisiting previous waves, undoing a selection, and restarting an attempt. It remembers this attempt on the phone.
 
-- Free Play: select level 1–5, browse candidate words, move between waves with Next.
-- Tic-Tac-Toe (Level 2): limits suggestions to words containing O or X.
-- One and Done 2.0 (Level 4): suggests words without repeated letters, remembers letters from earlier waves, and offers three-wave route candidates.
+## Strict constraints
+- No suggestions when current wave letters are blank.
+- A suggested word must use only displayed letters for the **current** wave.
+- Each letter can appear **at most once in a word**, and can appear in **at most one word across all waves**.
+- If you alter a wave's chosen word, the choices for later waves are cleared.
+- An entered custom word must obey the same rules.
+- The helper does not read live game data or guarantee a word is accepted by Activate.
 
-Use the word length and available-letter filters to match what the room presents. Press Next manually after passing each wave. Progress is stored only in your device's browser.
+## Sources
+[Community badge list](https://activate.ryflix.ca/badges.html): One and Done 2.0 — complete Spellinator level 4 without using the same letter more than once. Community notes specify this applies across 3 waves; save vowels for later waves.
 
-## Source and limitations
+Word suggestions come from a general English word-frequency list in `words.js`, not an official Activate word list. No other badge or Free Play functionality is present. The app is unofficial and unaffiliated with Activate.
 
-Word suggestions are based on the frequency-ranked [Google 10,000 English words list](https://github.com/first20hours/google-10000-english) with a handful of additional candidates. No word has been verified against Activate's dictionary. The three-wave structure and example word lengths are editable assumptions, not validated live prompts. This helper cannot automatically monitor progress or award badges.
-
-The helper is independent and unaffiliated with Activate.
+## Update history
+- 2026-11-01: Single-badge rebuild with mandatory per-wave letter banks, strict letter lockout, simpler interface, and offline cache version change.
