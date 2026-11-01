@@ -82,23 +82,6 @@ footer{font-size:.65rem;color:#8798ae;line-height:1.4;text-align:center;margin-t
 @media(max-width:360px){main{padding-left:7px;padding-right:7px}.key{height:39px}.rec{min-height:43px}.panel{padding:7px}.answers{padding:7px}.rack{padding:5px}.brand{font-size:20px}}
 @media(min-width:550px){main{padding-top:22px}.key{height:48px}.rec{min-height:50px}}
 
-.mode-pick{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin:5px 0 9px}
-.mode-pick button{border:1px solid #60708d;background:#242d44;color:#e6edfa;border-radius:10px;padding:9px 5px;min-height:54px;font-weight:900;font-size:.8rem;line-height:1.16}
-.mode-pick button small{display:block;color:#b5c2d3;font-size:.65rem;font-weight:600;margin-top:2px}
-.mode-pick button.active{background:#204157;border:2px solid var(--cyan);padding:8px 4px}
-.plan-tabs{display:grid;grid-template-columns:repeat(3,1fr);gap:5px;margin:7px 0}
-.plan-tabs button{border:1px solid #50647c;background:#28354d;color:#cbdaf3;border-radius:8px;padding:8px 4px;font-size:.79rem;font-weight:900}
-.plan-tabs button.active{background:#246b61;border-color:#5bffbe;color:white}
-.plan-word{display:flex;width:100%;align-items:center;gap:8px;justify-content:space-between;text-align:left;border:1px solid #425e7b;background:#213147;color:white;border-radius:9px;padding:9px 11px;min-height:58px}
-.plan-word.current{border:2px solid #63e0b4;background:#1e3a3e;padding:8px 10px}
-.plan-word.complete{background:#1d382f;border-color:#3e8060}
-.plan-word:disabled{opacity:1}
-.plan-word .round-tag{font-size:.68rem;color:#b8c8dc;min-width:47px}
-.plan-word strong{font-size:1.45rem;letter-spacing:.065em;flex:1}
-.plan-word .hint-tag{font-size:.65rem;color:#c0f5d4;font-weight:850;max-width:78px;text-align:right}
-.plan-note{font-size:.74rem;line-height:1.38;color:#b6c8de;margin:6px 2px}
-.fullplan-button{width:100%;border:0;color:#06281e;background:linear-gradient(90deg,#55dfb5,#94f2cc);border-radius:10px;min-height:49px;font-size:.96rem;font-weight:950}
-.edit-letters{margin-top:7px;width:100%;border:1px solid #53728d;background:#26354b;color:#ecf5ff;border-radius:8px;padding:10px 8px;font-size:.78rem;font-weight:850}
 footer{margin-bottom:2px}
 </style>
 </head>
@@ -137,7 +120,7 @@ footer{margin-bottom:2px}
 <div class="error" id="error" role="alert" hidden></div>
 <div class="finish" id="finish" hidden></div>
 <div class="bottom"><span class="note">Tap a suggested word AFTER playing it. No confirmation screen.</span><div class="bottom-buttons"><button type="button" id="back">← Back</button><button type="button" id="reset">↻ Reset</button></div></div>
-<footer>Unofficial helper · Activate's accepted-word list is not available. Recommendations favour familiar words, saving vowels early and leaving future possibilities. Future room tiles may change.</footer>
+<footer>Unofficial helper · Activate's accepted-word list is not available. Recommendations favour familiar words, saving vowels early and leaving future possibilities. Players report the wall letters change between rounds.</footer>
 </main>
 <script src="./words.js"></script>
 <script>
