@@ -122,6 +122,7 @@ footer{margin-bottom:2px}
 <div class="head"><strong id="entry-title">Tap letters you can see</strong><div class="tools"><button type="button" id="all-letters" hidden>A–Z</button><button type="button" id="undo">↶ Undo</button><button type="button" id="clear">Clear</button></div></div>
 <div class="rack" id="rack" aria-live="polite"></div>
 <div class="keyboard" id="keyboard" role="group" aria-label="Alphabet letter buttons"></div>
+<button id="focus-top" type="button" class="fullplan-button" style="margin-top:8px" hidden>FOCUS ON THE 3 WORDS →</button>
 <div class="micro" id="keyboard-note">Grey = selected this round. <span style="color:#ffbf88">Orange dot = used earlier</span> (still tappable, but excluded from words).</div>
 </section>
 <section class="answers" id="shared" hidden>
@@ -310,7 +311,8 @@ function renderShared(){
  var solved=state.planReady&&state.plans.length>0;
  var rack=state.racks[0],uniqueCount=new Set(rack).size;
  get('shared-count').textContent=uniqueCount+' wall letters';
- get('solve-now').hidden=(solved&&state.planLocked)||state.finished;
+ get('solve-now').hidden=solved||state.finished;
+ get('focus-top').hidden=!solved||state.planLocked;
  get('solve-now').textContent=solved?'FOCUS ON THE 3 WORDS':'Find all 3 words';
  get('edit-letters').hidden=!solved||!state.planLocked;
  get('plan-tabs').hidden=!solved||state.plans.length<2;
@@ -485,7 +487,12 @@ get('solve-now').addEventListener('click',function(){
  buildPlan();if(state.planReady){state.planLocked=true;save();render()}
 });
 get('all-letters').addEventListener('click',function(){
- state.racks[0]='ABCDEFGHIJKLMNOPQRSTUVWXYZ';state.planReady=false;state.planLocked=false;state.plans=[];save();renderQuick();schedulePlan();
+ state.racks[0]='ABCDEFGHIJKLMNOPQRSTUVWXYZ';state.planReady=false;state.planLocked=false;state.plans=[];
+ buildPlan();if(state.planReady){state.planLocked=true;save();render()}
+});
+get('focus-top').addEventListener('click',function(){
+ if(!shared()||!state.planReady)return;
+ state.planLocked=true;save();render();window.scrollTo(0,0);
 });
 get('edit-letters').addEventListener('click',function(){
  if(state.words.some(Boolean)&&!confirm('Edit wall letters? This will restart the 3-word plan.'))return;
