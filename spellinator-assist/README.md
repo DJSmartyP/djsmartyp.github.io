@@ -1,52 +1,32 @@
-# DJ Smarty — One and Done 2.0
-**Live app:** https://djsmartyp.github.io/spellinator-assist/
+# DJ Smarty — One and Done 2.0 (Spellinator Level 4)
 
-An unofficial mobile-first helper for Spellinator Level 4, designed for the 60-second One and Done 2.0 badge challenge.
+**Live helper:** https://djsmartyp.github.io/spellinator-assist/
 
-## Choose the mode that matches the game
+This is a phone-friendly helper for the 60-second Level 4 badge, focused only on **changing letters each round**.
 
-### Same letters throughout
-Use this when the available wall letters stay the same for rounds 1, 2 and 3.
+## The three rounds
+1. Round 1: find a **4-letter** word from the wall letters.
+2. Round 2: new wall letters; find a **5-letter** word without reusing letters already played.
+3. Round 3: new wall letters; find a **6-letter** word without repeating any letter from rounds 1 or 2.
 
-1. Tap the letters displayed on the wall once. Tapped keys **grey out without moving**; tap again to deselect.
-2. When at least **15 distinct letters** are selected, the helper automatically searches for a **complete sequence** of a 4-letter word, a 5-letter word and a 6-letter word. All words must use displayed letters, and the **15 letters used across the words must be distinct**.
-3. Tap **Focus on the 3 words** to hide the keyboard and display the full sequence. Other complete sequences are provided when available.
-4. Read all three answers at once; you don't have to enter each round's letters again. If desired, tap a planned word **only after completing it in the physical room** to track progress. When you have completed all rounds, check Activate for your badge.
+A July 2026 player discussion reports that letters change between rounds; new letters can appear. One player's recollection is about **15 available letters, 4 vowels and 11 consonants** (Y counted as a consonant). That quantity has **not** been independently verified for Watford. The assistant doesn't enforce it.
 
-The **A–Z** shortcut fills all 26 letters and goes straight to a plan, but use it **only when all those letters are actually available**.
+## Fast controls
+- The alphabet keypad has **26 fixed positions**. Tapped letters grey out in place; tap again to unselect, or use Undo/Clear.
+- Previously played letters can still be tapped if they appear on the current wall, but are orange-marked and excluded from suggested answers.
+- The **three strongest suggestions** appear directly below the keypad. They use only the current wall letters and don't repeat letters played earlier.
+- Tap a suggestion **only once the game accepts your word**: this records the used letters and advances to the next round automatically.
+- If you already played a word, use **Played a word** at the top to record it directly without entering the wall letters.
+- Go Back to correct a recorded word. If it changes, later words are cleared.
+- Progress is saved on the device.
 
-Ranking favours familiar complete word sequences; the helper does not need to save vowels speculatively because it knows which letters its own three-word solution uses.
+## Ranking
+Rounds 1 and 2 favour familiar candidates that save vowels and preserve potential dictionary words for the next round. Future tiles are unknown, so this is a heuristic, not a guarantee. Round 3 prioritises familiar six-letter words.
 
-### Letters change each round
-Use this when new letters appear in each round.
+## Removed
+The speculative **same letters throughout** mode, fixed-letter three-word solver, and their controls have been permanently removed, based on the players' report that the letters change between rounds.
 
-1. Round 1: 4 letters. Tap the current wall letters.
-2. The helper shows the **three strongest word suggestions** based on their familiarity, vowel cost, and estimated remaining flexibility. Tap a suggestion only **after the real game accepts it**; the next round opens instantly.
-3. Repeat with the new wall letters for round 2 (5-letter word), then round 3 (6-letter word).
-4. Letters played earlier may still be entered when they appear on the wall again, but **cannot appear in future suggested words**.
+## Limitations
+The word list is general English, **not Activate's confirmed accepted-word list**. Suggestions may be rejected. The app doesn't observe game buttons or award badges.
 
-In both modes, you can enter an already-played word via the **Played a word** button at the top instead of entering the available letters.
-
-If you discover mid-attempt that the wall letters change, **switch from Same to Changes** after recording your earlier word; the app preserves your already-used word and starts a new letter bank.
-
-## Safeguards
-
-- Each word has its required length (4, 5, 6).
-- No letter is repeated within a word or across the three recorded words.
-- Same mode will **not invent a complete plan** if the entered letters cannot support one from the general dictionary.
-- A general English frequency list is used, **not Activate's official accepted-word list**. Some suggestions may be rejected, so only record a word after playing it successfully.
-- The letter-selection keypad always stays in the same A–Z positions.
-- Progress is saved locally on your device.
-- This helper cannot read live room letters, detect a win, or award a badge.
-
-## Player evidence (7 July 2026)
-
-A screenshot of players discussing the Hide-room Spellinator Level 4 badge reports that:
-- **Letters change between rounds**, and new letters may appear.
-- One player recalls **4 vowels and 11 consonants** on the wall (Y counted as consonant): this is a recollection, not independently confirmed for Watford.
-- Badge condition: **don't repeat any letter** across rounds. You do **not** have to use every wall letter.
-- Required word lengths are 4, 5, and 6 letters.
-
-Therefore **Letters change each round** is highlighted as the recommended mode. **Same letters** remains a backup option in case the actual room proves otherwise. The keyboard shows a live count of selected letters/vowels/consonants without enforcing the unverified 15-letter distribution.
-
-Offline cache version: djsmarty-one-and-done-v12.
+Offline cache: `djsmarty-one-and-done-v13`.
