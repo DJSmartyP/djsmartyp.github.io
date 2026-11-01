@@ -76,6 +76,7 @@ main{max-width:530px;margin:auto;padding:9px 10px calc(18px + env(safe-area-inse
 .error{border:1px solid #a96b56;color:#ffe2cb;background:#402b29;border-radius:9px;padding:8px 10px;font-weight:750;font-size:.8rem;margin-bottom:6px}
 .finish{border:1px solid #3ea87d;color:#dcffe7;background:#194432;border-radius:12px;padding:18px 12px;margin-bottom:10px;font-weight:800;text-align:center}
 .finish strong{font-size:1.3rem;display:block;margin-bottom:5px}
+.bottom-buttons{display:flex;gap:5px;flex-shrink:0}.overlay{position:fixed;inset:0;z-index:70;background:#080b16d9;padding:15px;display:flex;align-items:flex-start;justify-content:center}.dialog{width:min(100%,460px);margin-top:min(12vh,100px);background:#192239;border:2px solid #72d9f2;border-radius:16px;padding:15px;box-shadow:0 18px 50px #000a}.dialog-head{display:flex;align-items:center;justify-content:space-between;gap:10px}.dialog-head strong{font-size:1.15rem}.dialog-head button{background:#2a3550;color:white;border:1px solid #617590;border-radius:9px;padding:7px 12px;font-size:1rem}.dialog p{color:#c4d4e7;font-size:.83rem;margin:8px 0 12px}.dialog form{display:flex;gap:6px}.dialog input{width:100%;min-width:0;flex:1;background:#0b1322;color:#fff;border:2px solid #6b7998;border-radius:9px;font-size:1.12rem;font-weight:900;letter-spacing:.08em;padding:10px;text-transform:uppercase}.dialog input::placeholder{font-size:.81rem;letter-spacing:0;color:#a5b2c8}.dialog form button{background:#4be5ac;color:#083b2b;border:0;border-radius:9px;padding:8px;font-weight:1000;white-space:nowrap;font-size:.85rem}.dialog .error{margin:9px 0 0}
 footer{font-size:.65rem;color:#8798ae;line-height:1.4;text-align:center;margin-top:8px}
 [hidden]{display:none!important}
 @media(max-width:360px){main{padding-left:7px;padding-right:7px}.key{height:39px}.rec{min-height:43px}.panel{padding:7px}.answers{padding:7px}.rack{padding:5px}.brand{font-size:20px}}
@@ -86,7 +87,7 @@ footer{font-size:.65rem;color:#8798ae;line-height:1.4;text-align:center;margin-t
 <main>
 <header class="top">
 <div class="brand">ONE <em>&amp; DONE</em><small>LEVEL 4 · DJ SMARTY · SPELLINATOR</small></div>
-<button type="button" class="subtle" id="reset">↻ Restart</button>
+<button type="button" class="subtle" id="manual-open">✓ Played a word</button>
 </header>
 <nav class="rounds" id="rounds" aria-label="Round progress"></nav>
 <div class="statusline"><span class="roundname" id="roundname">ROUND 1 · 4 LETTERS</span><span class="used" id="used">Used: none</span></div>
@@ -101,16 +102,20 @@ footer{font-size:.65rem;color:#8798ae;line-height:1.4;text-align:center;margin-t
 <div class="recs" id="suggestions"></div>
 <button id="more" type="button" class="extra" hidden>More word options</button>
 </section>
-<details class="manual" id="manual">
-<summary>Already played a word? Record it directly</summary>
+<div class="overlay" id="manual-backdrop" hidden>
+<section class="dialog" role="dialog" aria-modal="true" aria-labelledby="dialog-title">
+<div class="dialog-head"><strong id="dialog-title">Word already played?</strong><button type="button" id="manual-close" aria-label="Close">✕</button></div>
+<p>Enter the word you just completed. It must use fresh letters.</p>
 <form id="form">
-<input id="played" autocomplete="off" autocapitalize="characters" spellcheck="false" aria-label="Word already played" placeholder="Word accepted in the game" maxlength="6" enterkeyhint="go">
-<button type="submit" id="record">Save →</button>
+<input id="played" autocomplete="off" autocapitalize="characters" spellcheck="false" aria-label="Word already played" placeholder="Accepted word" maxlength="6" enterkeyhint="go">
+<button type="submit" id="record">Save &amp; Next →</button>
 </form>
-</details>
+<div class="error" id="modal-error" role="alert" hidden></div>
+</section>
+</div>
 <div class="error" id="error" role="alert" hidden></div>
 <div class="finish" id="finish" hidden></div>
-<div class="bottom"><span class="note">Only record a word the room accepted. Next round opens automatically.</span><button type="button" id="back">← Back</button></div>
+<div class="bottom"><span class="note">Tap a suggested word AFTER playing it. No confirmation screen.</span><div class="bottom-buttons"><button type="button" id="back">← Back</button><button type="button" id="reset">↻ Reset</button></div></div>
 <footer>Unofficial helper · Activate's accepted-word list is not available. Recommendations favour familiar words, saving vowels early and leaving future possibilities. Future room tiles may change.</footer>
 </main>
 <script src="./words.js"></script>
@@ -179,7 +184,10 @@ function rank(){
  var available=usedMask(rack);
  return rankedFor(state.wave,prior).filter(function(e){return (e.mask&available)===e.mask});
 }
-function setError(message){get('error').hidden=!message;get('error').textContent=message||''}
+function setError(message){
+ get('error').hidden=!message;get('error').textContent=message||'';
+ get('modal-error').hidden=!message;get('modal-error').textContent=message||'';
+}
 function record(word,source){
  word=normal(word);
  var err=validate(word,state.wave,source==='selection');
@@ -189,7 +197,7 @@ function record(word,source){
  if(changed)for(var i=state.wave+1;i<3;i++){state.words[i]='';state.racks[i]=''}
  if(state.wave===2)state.finished=true;
  else{state.wave++;state.finished=false}
- state.visible=3;get('played').value='';get('manual').open=false;setError('');save();render();
+ state.visible=3;get('played').value='';get('manual-backdrop').hidden=true;setError('');save();render();
  window.scrollTo(0,0);
 }
 function toggle(letter){
@@ -252,7 +260,7 @@ function render(){
  get('roundname').textContent='ROUND '+(wave+1)+' · '+required(wave)+' LETTERS';
  var beforeList=state.words.slice(0,wave).filter(Boolean);
  get('used').textContent=state.words[wave]?'This round: '+state.words[wave].toUpperCase():beforeList.length?'Used: '+beforeList.map(function(x){return x.toUpperCase()}).join(' / '):'No letters used yet';
- get('entry').hidden=finished;get('answers').hidden=finished;get('manual').hidden=finished;
+ get('entry').hidden=finished;get('answers').hidden=finished;get('manual-open').disabled=finished;
  get('back').disabled=wave===0&&!finished;
  get('played').maxLength=required(wave);
  get('played').value=state.words[wave]?state.words[wave].toUpperCase():'';
@@ -272,10 +280,17 @@ get('back').addEventListener('click',function(){
  if(state.wave===0)return;
  state.wave--;state.finished=false;state.visible=3;setError('');save();render();
 });
+get('manual-open').addEventListener('click',function(){
+ if(state.finished)return;
+ get('manual-backdrop').hidden=false;setError('');get('played').value=state.words[state.wave]?state.words[state.wave].toUpperCase():'';
+ get('played').focus();
+});
+get('manual-close').addEventListener('click',function(){get('manual-backdrop').hidden=true;setError('')});
+get('manual-backdrop').addEventListener('click',function(e){if(e.target===get('manual-backdrop')){get('manual-backdrop').hidden=true;setError('')}});
 get('form').addEventListener('submit',function(e){e.preventDefault();record(get('played').value,'typed')});
 get('reset').addEventListener('click',function(){
  if(!confirm('Restart the three-round badge attempt?'))return;
- state={wave:0,racks:['','',''],words:['','',''],finished:false,visible:3};save();get('manual').open=false;setError('');render()
+ state={wave:0,racks:['','',''],words:['','',''],finished:false,visible:3};save();get('manual-backdrop').hidden=true;setError('');render()
 });
 render();
 if('serviceWorker' in navigator&&location.protocol.startsWith('http'))window.addEventListener('load',function(){navigator.serviceWorker.register('./sw.js').catch(function(){})});
