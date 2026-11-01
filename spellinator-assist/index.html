@@ -69,7 +69,7 @@ details summary{cursor:pointer;color:#ff9ed3;font-weight:750;font-size:.83rem;pa
 </section>
 <section class="panel accent" id="word-panel">
 <div class="word-header"><b>02 / Possible words</b><span class="count" id="match-count"></span></div>
-<p class="hint">Every word below is exactly the required length and can be formed using your current letters. Tap a word <strong>after you have played it successfully</strong> to save it and move on.</p>
+<p class="hint">Every option uses only your displayed letters, with no letters reused from earlier rounds. Suggestions favour saving vowels and preserving future possibilities in rounds 1 and 2. Tap a word <strong>only after Activate accepts it</strong>.</p><div class="state-note" id="strategy-note" style="margin-bottom:12px">Future wall letters may change. Ranking is an estimate, not a guarantee.</div>
 <div id="message" class="words-empty" role="status" aria-live="polite"></div>
 <div id="results" class="wordgrid"></div>
 <button id="show-more" class="smallbutton" type="button" style="margin-top:11px;width:100%" hidden>Show more words</button>
@@ -88,7 +88,7 @@ details summary{cursor:pointer;color:#ff9ed3;font-weight:750;font-size:.83rem;pa
 </section>
 <footer>Unofficial helper, not affiliated with Activate. Word suggestions use a general English dictionary rather than Activate's official list, so some may be rejected. The badge must be confirmed in the real game. Your progress is stored on this device.</footer>
 </main>
-<script src="./words.js?v=6"></script>
+<script src="./words.js?v=7"></script>
 <script>
 (function(){
 'use strict';
@@ -125,14 +125,40 @@ function validateWord(word,wave,checkRack){
   return '';
 }
 var dict=(window.SPELL_WORDS||[]).filter(function(entry){return /^[a-z]{4,6}$/.test(entry[0])&&unique(entry[0])}).map(function(entry){return {word:entry[0],freq:Number(entry[1])||1}});
+function wordMask(word){
+  var mask=0;
+  for(var i=0;i<word.length;i++)mask|=(1<<(word.charCodeAt(i)-97));
+  return mask;
+}
+var futureWords=dict.filter(function(entry){return entry.word.length===5||entry.word.length===6}).map(function(entry){
+  return {mask:wordMask(entry.word),len:entry.word.length,freq:entry.freq,word:entry.word};
+});
 function suggestions(){
   var rack=normal(state.racks[state.wave]);
   if(!rack)return [];
   var blocked=new Set(usedBefore(state.wave)),available=new Set(rack),length=requiredLength(state.wave);
-  return dict.filter(function(entry){if(entry.word.length!==length)return false;return Array.from(entry.word).every(function(ch){return available.has(ch)&&!blocked.has(ch)})}).sort(function(a,b){
-    var rating=function(entry){var vowels=(entry.word.match(/[aeiou]/g)||[]).length;return Math.log2(entry.freq+1)*2-(state.wave<2?vowels*1.1:0)};
-    return rating(b)-rating(a)||a.word.localeCompare(b.word)
+  var current=dict.filter(function(entry){
+    return entry.word.length===length&&Array.from(entry.word).every(function(ch){return available.has(ch)&&!blocked.has(ch)});
   });
+  var previouslyUsedMask=wordMask(usedBefore(state.wave));
+  var nextPools=state.wave===0?[5,6]:state.wave===1?[6]:[];
+  var remainingFuture=futureWords.filter(function(entry){return nextPools.indexOf(entry.len)!==-1&&(entry.mask&previouslyUsedMask)===0});
+  var totalWeight=remainingFuture.reduce(function(sum,entry){return sum+Math.max(1,entry.freq)},0);
+  return current.map(function(entry){
+    var vowels=(entry.word.match(/[aeiou]/g)||[]).length,mask=wordMask(entry.word);
+    var preserved=0;
+    if(state.wave<2){
+      for(var i=0;i<remainingFuture.length;i++){
+        if((remainingFuture[i].mask&mask)===0)preserved+=Math.max(1,remainingFuture[i].freq);
+      }
+    }
+    var flexibility=totalWeight?preserved/totalWeight:0;
+    var familiarity=Math.max(0,Math.min(1,(entry.freq-10000)/10000));
+    // Potential future racks are unknown; dictionary flexibility is a heuristic, not a prediction.
+    // For rounds 1/2 use flexibility, low vowel cost, and familiar words together.
+    var score=state.wave===2?familiarity*100:(flexibility*65)+(familiarity*24)-(vowels*7);
+    return {word:entry.word,freq:entry.freq,vowels:vowels,flexibility:flexibility,score:score};
+  }).sort(function(a,b){return b.score-a.score||b.freq-a.freq||a.word.localeCompare(b.word)});
 }
 function save(){try{localStorage.setItem(KEY,JSON.stringify(state))}catch(ignore){}}
 function showError(msg){$('error').hidden=!msg;$('error').textContent=msg||''}
@@ -189,11 +215,14 @@ function renderSuggestions(){
   var wrap=$('results');wrap.replaceChildren();
   var matches=suggestions(),rack=normal(state.racks[state.wave]);
   $('match-count').textContent=rack?matches.length+' matches':'';
+  $('strategy-note').textContent=state.wave===2?'Final round: prioritising familiar 6-letter words that satisfy the lockout rule.': 'Ranked for the best balance of word familiarity, fewer vowels, and keeping common future '+(state.wave===0?'5- and 6-letter':'6-letter')+' words possible. Future tiles may change, so this is an estimate.';
   $('message').hidden=!!rack&&matches.length>0;
   $('message').textContent=!rack?'Enter the letters available in the room to see '+requiredLength(state.wave)+'-letter word suggestions.':matches.length?'':'No '+requiredLength(state.wave)+'-letter word found using these letters without repeating anything you already played. Check your letters.';
   matches.slice(0,state.visible).forEach(function(entry){
     var b=document.createElement('button');b.type='button';b.className='word';b.textContent=entry.word.toUpperCase();
-    var small=document.createElement('small');small.textContent='Used it? Tap to continue';b.appendChild(small);
+    var small=document.createElement('small');
+    small.textContent=state.wave===2?'Familiar word candidate':entry.vowels+' vowel'+(entry.vowels===1?'':'s')+' · '+(entry.flexibility>=0.50?'strong':entry.flexibility>=0.25?'some':'limited')+' reserve';
+    b.appendChild(small);
     b.onclick=function(){advanceWithWord(entry.word,'letters')};
     wrap.appendChild(b);
   });
