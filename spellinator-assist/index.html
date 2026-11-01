@@ -32,6 +32,7 @@ footer{font-size:.78rem;color:#aaa3b9;line-height:1.55;text-align:center;padding
 .end{border:1px solid #488c64;background:#1e4836;border-radius:11px;padding:13px;color:#c4ffe0}.end b{font-size:1.1rem}
 details summary{cursor:pointer;color:#ff9ed3;font-weight:750;font-size:.83rem;padding:5px 0}
 @media(min-width:520px){.wordgrid{grid-template-columns:repeat(4,minmax(0,1fr))}.panel{padding:20px}.tile{width:40px;height:44px}}@media(max-width:340px){.wordgrid{grid-template-columns:repeat(2,minmax(0,1fr))}.tile{width:29px;height:32px}}
+.mode-switch{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:14px 0 11px}.mode-switch button{padding:14px 8px;border-radius:10px;background:#28263b;color:#e8dcea;border:1px solid #635471;font-weight:850;font-size:.93rem}.mode-switch button.on{border:2px solid var(--pink);background:#55294c;color:#fff;padding:13px 7px}.field{width:100%;min-height:60px;font-size:1.45rem;font-weight:850;letter-spacing:.13em;background:#0a0b15;border:2px solid #81628b;color:white;border-radius:11px;padding:13px;text-transform:uppercase}.field::placeholder{font-size:.88rem;letter-spacing:0;color:#aea4b5;font-weight:500}.full-action{display:block;width:100%;margin-top:11px;background:linear-gradient(110deg,#ff4fb3,#eda4d5);border:0;color:#260b20;border-radius:12px;min-height:58px;font-weight:950;font-size:1.04rem}.feedback{margin:10px 0;padding:10px 12px;background:#3b2729;color:#ffd2c5;border:1px solid #87525c;border-radius:9px;font-size:.9rem}.word small{font-size:.69rem}.word:active{background:#483057}.mode-head{font-size:.95rem;font-weight:850;margin:13px 0 8px}.state-note{font-size:.85rem;color:#cdd7ff;background:#20243d;border:1px solid #424f79;border-radius:10px;padding:11px;line-height:1.5} [hidden]{display:none!important}
 </style>
 </head>
 <body>
@@ -39,82 +40,219 @@ details summary{cursor:pointer;color:#ff9ed3;font-weight:750;font-size:.83rem;pa
 <header>
 <div class="eyebrow">DJ SMARTY • ACTIVATE WATFORD</div>
 <h1>ONE &amp; <span>DONE 2.0</span></h1>
-<p><strong>Spellinator • Level 4 only.</strong> Round 1 needs a 4-letter word, Round 2 needs 5 letters, and Round 3 needs 6. Enter the letters actually shown each round. Never reuse letters between rounds.</p>
+<p><strong>Spellinator • Level 4 only.</strong> Round 1: four letters. Round 2: five. Round 3: six. Every letter can be used only once across all three answers.</p>
 </header>
 <section class="panel accent">
-<h2 class="panel-title">01 / Current wave</h2>
-<div class="wavebar" id="wavebar" aria-label="Round progress: four, five and six letters"></div><p class="biglabel" id="round-label">Round 1: Make a 4-letter word</p>
-<label for="rack" class="biglabel">Letters available on the wall</label>
-<input id="rack" class="rack" type="text" inputmode="text" autocomplete="off" autocapitalize="characters" spellcheck="false" placeholder="Type the letters you can see" maxlength="32" aria-describedby="rack-help">
-<p id="rack-help" class="hint">Required for every wave. Only words made from these letters will appear. You cannot reuse a letter from an earlier wave.</p>
-<div class="row"><span class="panel-title" style="margin:4px 0">Current letters</span><button class="smallbutton" id="clear-rack" type="button">Clear letters</button></div>
-<div class="letters empty" id="letter-tiles">Enter letters above to begin.</div>
+<h2 class="panel-title">01 / Your current round</h2>
+<div class="wavebar" id="wavebar" aria-label="Round progress"></div>
+<p class="biglabel" id="round-label">Round 1 • 4-letter word</p>
+<div class="mode-switch" role="group" aria-label="How would you like to enter your answer?">
+<button type="button" id="mode-letters" aria-pressed="true">Enter letters<br><small>Find possible words</small></button>
+<button type="button" id="mode-played" aria-pressed="false">Enter played word<br><small>Save and advance</small></button>
+</div>
+<div id="letters-mode">
+<label for="rack" class="biglabel">Letters currently available in the room</label>
+<input id="rack" class="field" inputmode="text" type="text" autocomplete="off" spellcheck="false" autocapitalize="characters" maxlength="32" placeholder="Type all available letters">
+<p class="hint">Only words made from THESE letters are suggested. Previously used letters cannot appear in any new word.</p>
+<div class="row"><span class="panel-title" style="margin:3px 0">Displayed letters</span><button id="clear-rack" class="smallbutton" type="button">Clear</button></div>
+<div id="letter-tiles" class="letters empty"></div>
 <details><summary>Tap letters instead of typing</summary><div class="keypad" id="keypad"></div></details>
-<div class="info" style="margin:12px 0">Fixed lengths: <strong>Round 1 = 4 letters · Round 2 = 5 letters · Round 3 = 6 letters.</strong> You don't need to choose the length.</div>
-<div class="info" id="used-info">Unused letters from earlier waves will remain available only when they appear on the current wall.</div>
+</div>
+<div id="played-mode" hidden>
+<label class="biglabel" for="played-word">What word did you successfully use?</label>
+<input class="field" id="played-word" type="text" autocomplete="off" spellcheck="false" autocapitalize="characters" maxlength="6" placeholder="Enter your played word">
+<p class="hint" id="played-hint">Type the exact 4-letter word you played. It does not require you to enter the available letters.</p>
+<button type="button" class="full-action" id="record-word">Record word &amp; next round →</button>
+</div>
+<div class="state-note" id="used-info" style="margin-top:14px"></div>
+<div class="feedback" id="error" role="alert" hidden></div>
 </section>
-<section class="panel accent">
-<div class="word-header"><b>02 / Words that fit</b><span id="match-count" class="count"></span></div>
-<p class="hint" style="margin-top:-3px">Every suggestion uses only your current available letters, without repeating any letter already played. Common words appear first.</p>
+<section class="panel accent" id="word-panel">
+<div class="word-header"><b>02 / Possible words</b><span class="count" id="match-count"></span></div>
+<p class="hint">Every word below is exactly the required length and can be formed using your current letters. Tap a word <strong>after you have played it successfully</strong> to save it and move on.</p>
 <div id="message" class="words-empty" role="status" aria-live="polite"></div>
 <div id="results" class="wordgrid"></div>
-<button id="show-more" class="smallbutton" style="margin-top:11px;width:100%" hidden>Show more words</button>
-<div id="chosen-panel"></div>
-<details style="margin-top:12px"><summary>Used a different accepted word?</summary><p class="hint">Record the word you actually played. It must meet the same letter rules.</p><div class="row"><input id="manual" type="text" spellcheck="false" placeholder="Enter played word" style="min-width:0;flex:1;background:#0b0d19;color:white;border:1px solid #6e607c;padding:12px;border-radius:9px;text-transform:uppercase"><button id="manual-add" class="smallbutton">Record</button></div></details>
+<button id="show-more" class="smallbutton" type="button" style="margin-top:11px;width:100%" hidden>Show more words</button>
 </section>
 <section class="panel">
-<h2 class="panel-title">03 / Words and letters already used</h2>
+<h2 class="panel-title">03 / Words and locked letters</h2>
 <div class="history" id="history"></div>
-<p class="panel-title" style="margin:13px 0 5px">Letters locked out</p>
+<p class="panel-title" style="margin:15px 0 4px">Letters already used in this attempt</p>
 <div class="letters" id="used-tiles"></div>
-<div id="warning"></div>
-<div class="actions"><button class="back" id="back">← Back</button><button class="next" id="next">Next wave →</button></div>
-<p class="hint" id="next-help">Press Next only after the word has been accepted in the room.</p>
-<button id="restart" class="smallbutton" style="width:100%;margin-top:8px">Start new attempt</button>
+<div id="finished"></div>
+<div class="row" style="margin-top:13px">
+<button id="back" class="back" type="button" style="padding:0 20px">← Previous round</button>
+<button id="restart" class="smallbutton" type="button">Restart attempt</button>
+</div>
+<p class="hint">If you entered the wrong word, go back and replace it. Later answers will be cleared to keep the letter history accurate.</p>
 </section>
-<footer>Unofficial helper, not affiliated with Activate. <a href="https://activate.ryflix.ca/badges.html" rel="noopener noreferrer" target="_blank">Badge rule source</a>. Suggestions are from a general English dictionary, not an official Activate word list; some words may be rejected. The tool cannot award badges. Progress is stored on this device.</footer>
+<footer>Unofficial helper, not affiliated with Activate. Word suggestions use a general English dictionary rather than Activate's official list, so some may be rejected. The badge must be confirmed in the real game. Your progress is stored on this device.</footer>
 </main>
-<script src="./words.js?v=5"></script>
+<script src="./words.js?v=6"></script>
 <script>
 (function(){
 'use strict';
-var KEY='djsmarty-one-done-level4-v5';
-function requiredLength(wave){return wave+4}
-var defaults={wave:0,racks:['','',''],words:['','',''],visible:24,finished:false};
+var KEY='djsmarty-one-done-level4-v6';
+var defaults={wave:0,racks:['','',''],words:['','',''],mode:'letters',visible:24,finished:false};
 var state=JSON.parse(JSON.stringify(defaults));
-try{var saved=JSON.parse(localStorage.getItem(KEY)||'null');if(saved&&Array.isArray(saved.racks)&&saved.racks.length===3&&Array.isArray(saved.words)&&saved.words.length===3){state=Object.assign(state,saved)}}catch(err){}
+try{
+  var saved=JSON.parse(localStorage.getItem(KEY)||'null');
+  if(saved&&Array.isArray(saved.racks)&&saved.racks.length===3&&Array.isArray(saved.words)&&saved.words.length===3){
+    state=Object.assign(state,saved);
+    state.wave=Math.min(2,Math.max(0,Number(state.wave)||0));
+    state.mode=state.mode==='played'?'played':'letters';
+  }
+}catch(ignore){}
 function $(id){return document.getElementById(id)}
-function normal(str){return String(str||'').toLowerCase().replace(/[^a-z]/g,'')}
-function hasUnique(str){return new Set(str).size===str.length}
-var dict=(window.SPELL_WORDS||[]).filter(function(p){return /^[a-z]{3,9}$/.test(p[0])&&hasUnique(p[0])}).map(function(p){return {word:p[0],freq:Number(p[1])||1}});
-function save(){try{localStorage.setItem(KEY,JSON.stringify(state))}catch(err){}}
-function usedBefore(wave){return state.words.slice(0,wave).join('')}
-function isSafe(word,wave){var rack=normal(state.racks[wave]);word=normal(word);if(!rack||word.length!==requiredLength(wave)||!hasUnique(word))return false;var available=new Set(rack);var blocked=new Set(normal(usedBefore(wave)));for(var i=0;i<word.length;i++)if(!available.has(word[i])||blocked.has(word[i]))return false;return true}
-function getResults(){var wave=state.wave,rack=normal(state.racks[wave]);if(!rack)return [];return dict.filter(function(d){return isSafe(d.word,wave)}).sort(function(a,b){
-var score=function(d){var vowel=(d.word.match(/[aeiou]/g)||[]).length;return Math.log2(d.freq+1)*2+(wave<2?-vowel*1.2:0)};
-return score(b)-score(a)||a.word.localeCompare(b.word)
-})}
-function setWord(word){word=normal(word);if(!isSafe(word,state.wave)){alert('Your word must have exactly '+requiredLength(state.wave)+' different letters, all visible this round and not used in earlier rounds.');return}if(state.words[state.wave]!==word){state.words[state.wave]=word;for(var i=state.wave+1;i<3;i++)state.words[i]='';state.finished=false}save();render()}
-function updateRack(value){var next=normal(value).toUpperCase();state.racks[state.wave]=next;if(state.words[state.wave]&&!isSafe(state.words[state.wave],state.wave)){state.words[state.wave]='';for(var i=state.wave+1;i<3;i++)state.words[i]='';state.finished=false}state.visible=24;save();renderData()}
-function changeWave(delta){if(delta>0){if(!state.words[state.wave]){alert('Choose the word you successfully played before moving on.');return}if(state.wave===2){state.finished=true;save();render();return}state.wave++}else{if(state.wave===0)return;state.wave--;state.finished=false}state.visible=24;save();render();window.scrollTo({top:0,behavior:'smooth'})}
-function makeTile(letter,kind){var span=document.createElement('span');span.className='tile'+(kind?' '+kind:'');span.textContent=letter;return span}
-function renderProgress(){var area=$('wavebar');area.replaceChildren();for(var i=0;i<3;i++){var btn=document.createElement('button');btn.type='button';btn.className='wave'+(state.wave===i?' current':state.words[i]?' complete':'');btn.innerHTML='<strong>'+requiredLength(i)+' letters</strong>Round '+(i+1);btn.disabled=i>state.wave;(function(w){btn.onclick=function(){if(w>state.wave)return;state.wave=w;state.finished=false;state.visible=24;save();render()}})(i);area.appendChild(btn)}}
-function renderLetters(){var rack=normal(state.racks[state.wave]).toUpperCase();var blocked=new Set(usedBefore(state.wave).toUpperCase());var tiles=$('letter-tiles');tiles.replaceChildren();tiles.classList.toggle('empty',!rack);if(!rack)tiles.textContent='Enter the letters visible in this wave.';else for(var i=0;i<rack.length;i++)tiles.appendChild(makeTile(rack[i],blocked.has(rack[i])?'blocked':/[AEIOU]/.test(rack[i])?'vowel':''));$('used-info').textContent=blocked.size?'Locked from earlier waves: '+Array.from(blocked).sort().join(' · ')+'. These are excluded even if visible on the wall.':'No letters used in earlier waves yet.'}
-function renderData(){renderLetters();var out=$('results'),message=$('message');var rack=normal(state.racks[state.wave]);var all=getResults();$('match-count').textContent=rack?all.length+' possible words':'';out.replaceChildren();message.hidden=true;
-if(!rack){message.hidden=false;message.textContent='Enter the available letters shown on the wall. Suggestions will not appear until you do.'}else if(!all.length){message.hidden=false;message.textContent='No valid '+requiredLength(state.wave)+'-letter word found from these letters. Double-check the displayed letters. Letters used in earlier rounds cannot be reused.'}
-else{all.slice(0,state.visible).forEach(function(entry){var b=document.createElement('button');b.type='button';b.className='word'+(state.words[state.wave]===entry.word?' selected':'');var vowels=(entry.word.match(/[aeiou]/g)||[]).length;b.innerHTML=entry.word.toUpperCase()+'<small>'+(state.words[state.wave]===entry.word?'✓ chosen':vowels+' vowel'+(vowels===1?'':'s'))+'</small>';b.onclick=function(){setWord(entry.word)};out.appendChild(b)})}
-var more=$('show-more');more.hidden=all.length<=state.visible;more.textContent='Show more ('+(all.length-state.visible)+' remaining)';$('chosen-panel').replaceChildren();if(state.words[state.wave]){var box=document.createElement('div');box.className='selected-panel';var strong=document.createElement('b');strong.textContent=state.words[state.wave].toUpperCase();box.append('Round '+(state.wave+1)+' word: ',strong,'. Only tap Next once this word has been accepted in the room.');var change=document.createElement('button');change.className='smallbutton';change.textContent='Undo selection';change.style.marginLeft='8px';change.onclick=function(){state.words[state.wave]='';for(var i=state.wave+1;i<3;i++)state.words[i]='';state.finished=false;save();render()};box.append(change);$('chosen-panel').appendChild(box)}renderHistory()}
-function renderHistory(){var h=$('history');h.replaceChildren();state.words.forEach(function(w,i){var block=document.createElement('div');block.className='history-card'+(state.wave===i?' current':w?' done':'');block.innerHTML='<strong>ROUND '+(i+1)+' · '+requiredLength(i)+' LETTERS</strong><b>'+(w?w.toUpperCase():'—')+'</b>';h.appendChild(block)});var used=$('used-tiles');used.replaceChildren();var chars=Array.from(new Set(state.words.join('').toUpperCase())).sort();if(chars.length===0){used.classList.add('empty');used.textContent='None yet.'}else{used.classList.remove('empty');chars.forEach(function(c){used.appendChild(makeTile(c,'used'))})}var warn=$('warning');warn.replaceChildren();if(state.finished){var good=document.createElement('div');good.className='end';good.innerHTML='<b>All 3 waves recorded!</b><div>Check the result on Activate to confirm whether One and Done 2.0 was awarded.</div>';warn.appendChild(good)}$('back').disabled=state.wave===0;$('next').textContent=state.wave<2?'Next wave →':'Finish attempt ✓';$('next').disabled=state.finished;$('next-help').textContent=state.wave<2?'Press Next only after the current word is accepted. Next wave requires new available letters.':'Press Finish after completing wave 3 in the room.'}
-function render(){state.racks=state.racks.map(function(r){return normal(r).toUpperCase()});$('rack').value=state.racks[state.wave];$('round-label').textContent='Round '+(state.wave+1)+': Make a '+requiredLength(state.wave)+'-letter word';renderProgress();renderData()}
-function keypad(){var p=$('keypad');'ABCDEFGHIJKLMNOPQRSTUVWXYZ'.split('').forEach(function(c){var b=document.createElement('button');b.type='button';b.textContent=c;b.onclick=function(){updateRack(state.racks[state.wave]+c);$('rack').value=state.racks[state.wave]};p.appendChild(b)})}
-$('rack').addEventListener('input',function(e){updateRack(e.target.value);if(e.target.value!==state.racks[state.wave])e.target.value=state.racks[state.wave]});
-$('clear-rack').onclick=function(){updateRack('');$('rack').value='';$('rack').focus()};
-$('manual-add').onclick=function(){var w=normal($('manual').value);if(!w)return;setWord(w);if(state.words[state.wave]===w){$('manual').value='';$('manual').closest('details').open=false}};
-$('manual').addEventListener('keydown',function(e){if(e.key==='Enter'){$('manual-add').click();e.preventDefault()}});
-$('show-more').onclick=function(){state.visible+=24;save();renderData()};
-$('back').onclick=function(){changeWave(-1)};$('next').onclick=function(){changeWave(1)};
-$('restart').onclick=function(){if(!confirm('Start a new level 4 badge attempt? Clear recorded words and letters?'))return;state=JSON.parse(JSON.stringify(defaults));save();render()};
-keypad();render();
+function normal(text){return String(text||'').toLowerCase().replace(/[^a-z]/g,'')}
+function requiredLength(wave){return 4+wave}
+function unique(word){return new Set(word).size===word.length}
+function usedBefore(wave){return normal(state.words.slice(0,wave).join(''))}
+function validateWord(word,wave,checkRack){
+  word=normal(word);
+  if(word.length!==requiredLength(wave))return 'Round '+(wave+1)+' needs exactly '+requiredLength(wave)+' letters.';
+  if(!unique(word))return 'You cannot repeat a letter inside the same word.';
+  var blocked=new Set(usedBefore(wave));
+  var repeated=Array.from(word).filter(function(ch){return blocked.has(ch)});
+  if(repeated.length)return 'Already used in an earlier round: '+Array.from(new Set(repeated)).join(', ').toUpperCase()+'. Choose different letters.';
+  if(checkRack){
+    var rack=normal(state.racks[wave]);
+    if(!rack)return 'Enter the current available letters first.';
+    var available=new Set(rack);
+    var absent=Array.from(word).filter(function(ch){return !available.has(ch)});
+    if(absent.length)return 'Not available in this round: '+Array.from(new Set(absent)).join(', ').toUpperCase()+'.';
+  }
+  return '';
+}
+var dict=(window.SPELL_WORDS||[]).filter(function(entry){return /^[a-z]{4,6}$/.test(entry[0])&&unique(entry[0])}).map(function(entry){return {word:entry[0],freq:Number(entry[1])||1}});
+function suggestions(){
+  var rack=normal(state.racks[state.wave]);
+  if(!rack)return [];
+  var blocked=new Set(usedBefore(state.wave)),available=new Set(rack),length=requiredLength(state.wave);
+  return dict.filter(function(entry){if(entry.word.length!==length)return false;return Array.from(entry.word).every(function(ch){return available.has(ch)&&!blocked.has(ch)})}).sort(function(a,b){
+    var rating=function(entry){var vowels=(entry.word.match(/[aeiou]/g)||[]).length;return Math.log2(entry.freq+1)*2-(state.wave<2?vowels*1.1:0)};
+    return rating(b)-rating(a)||a.word.localeCompare(b.word)
+  });
+}
+function save(){try{localStorage.setItem(KEY,JSON.stringify(state))}catch(ignore){}}
+function showError(msg){$('error').hidden=!msg;$('error').textContent=msg||''}
+function advanceWithWord(raw,source){
+  var word=normal(raw),error=validateWord(word,state.wave,source==='letters');
+  if(error){showError(error);return false}
+  var changed=state.words[state.wave]!==word;
+  state.words[state.wave]=word;
+  if(changed){
+    for(var i=state.wave+1;i<3;i++){state.words[i]='';state.racks[i]=''}
+  }
+  state.visible=24;
+  if(state.wave===2)state.finished=true;
+  else{state.finished=false;state.wave++}
+  $('played-word').value='';
+  showError('');
+  save();render();
+  window.scrollTo({top:0,behavior:'smooth'});
+  return true;
+}
+function switchMode(mode){state.mode=mode==='played'?'played':'letters';showError('');save();renderMode()}
+function renderMode(){
+  var playing=state.mode==='played';
+  $('mode-letters').classList.toggle('on',!playing);
+  $('mode-played').classList.toggle('on',playing);
+  $('mode-letters').setAttribute('aria-pressed',String(!playing));
+  $('mode-played').setAttribute('aria-pressed',String(playing));
+  $('letters-mode').hidden=playing;
+  $('played-mode').hidden=!playing;
+  $('word-panel').hidden=playing||state.finished;
+  $('played-hint').textContent='Enter the '+requiredLength(state.wave)+'-letter word the room accepted, then tap Record. The letters will be blocked from all later answers.';
+}
+function renderProgress(){
+  var wrap=$('wavebar');wrap.replaceChildren();
+  for(var i=0;i<3;i++){
+    var b=document.createElement('button');b.type='button';
+    b.className='wave'+(i===state.wave?' current':state.words[i]?' complete':'');
+    b.innerHTML='<strong>'+requiredLength(i)+' letters</strong>Round '+(i+1);
+    b.disabled=i>state.wave;
+    (function(round){b.onclick=function(){if(round>state.wave)return;state.wave=round;state.finished=false;state.visible=24;save();render()}})(i);
+    wrap.appendChild(b);
+  }
+}
+function tile(letter,cls){var e=document.createElement('span');e.className='tile'+(cls?' '+cls:'');e.textContent=letter;return e}
+function renderLetters(){
+  var letters=normal(state.racks[state.wave]).toUpperCase(),blocked=new Set(usedBefore(state.wave).toUpperCase()),wrap=$('letter-tiles');
+  wrap.replaceChildren();wrap.classList.toggle('empty',!letters);
+  if(!letters)wrap.textContent='Enter the letters visible right now.';
+  else Array.from(letters).forEach(function(ch){wrap.appendChild(tile(ch,blocked.has(ch)?'blocked':/[AEIOU]/.test(ch)?'vowel':''))});
+  var locked=Array.from(blocked).sort();
+  $('used-info').textContent=locked.length?'Locked from previous rounds: '+locked.join(' · ')+'. These cannot be used again.':'No letters locked from previous rounds yet.';
+}
+function renderSuggestions(){
+  var wrap=$('results');wrap.replaceChildren();
+  var matches=suggestions(),rack=normal(state.racks[state.wave]);
+  $('match-count').textContent=rack?matches.length+' matches':'';
+  $('message').hidden=!!rack&&matches.length>0;
+  $('message').textContent=!rack?'Enter the letters available in the room to see '+requiredLength(state.wave)+'-letter word suggestions.':matches.length?'':'No '+requiredLength(state.wave)+'-letter word found using these letters without repeating anything you already played. Check your letters.';
+  matches.slice(0,state.visible).forEach(function(entry){
+    var b=document.createElement('button');b.type='button';b.className='word';b.textContent=entry.word.toUpperCase();
+    var small=document.createElement('small');small.textContent='Used it? Tap to continue';b.appendChild(small);
+    b.onclick=function(){advanceWithWord(entry.word,'letters')};
+    wrap.appendChild(b);
+  });
+  $('show-more').hidden=matches.length<=state.visible;
+  $('show-more').textContent='Show more ('+(matches.length-state.visible)+' remaining)';
+}
+function renderHistory(){
+  var wrap=$('history');wrap.replaceChildren();
+  state.words.forEach(function(word,i){
+    var card=document.createElement('div');
+    card.className='history-card'+(i===state.wave?' current':word?' done':'');
+    var label=document.createElement('strong');label.textContent='ROUND '+(i+1)+' · '+requiredLength(i)+' LETTERS';
+    var text=document.createElement('b');text.textContent=word?word.toUpperCase():'—';
+    card.append(label,text);wrap.appendChild(card);
+  });
+  var used=Array.from(new Set(normal(state.words.join('')).toUpperCase())).sort();
+  var wrapUsed=$('used-tiles');wrapUsed.replaceChildren();wrapUsed.classList.toggle('empty',used.length===0);
+  if(!used.length)wrapUsed.textContent='None yet.';
+  else used.forEach(function(ch){wrapUsed.appendChild(tile(ch,'used'))});
+  $('finished').replaceChildren();
+  if(state.finished){
+    var note=document.createElement('div');note.className='end';
+    note.textContent='All three rounds recorded! Check Activate to confirm the badge was awarded.';
+    $('finished').appendChild(note);
+  }
+  $('back').disabled=state.wave===0;
+}
+function render(){
+  state.racks=state.racks.map(function(x){return normal(x).toUpperCase()});
+  $('round-label').textContent='Round '+(state.wave+1)+' • '+requiredLength(state.wave)+'-letter word';
+  $('rack').value=state.racks[state.wave];
+  $('played-word').value=state.words[state.wave]?state.words[state.wave].toUpperCase():'';
+  $('played-word').maxLength=requiredLength(state.wave);
+  $('played-word').placeholder=requiredLength(state.wave)+'-letter word already played';
+  $('record-word').disabled=state.finished;
+  $('record-word').textContent=state.wave===2?'Record & finish ✓':'Record word & next round →';
+  renderProgress();renderMode();renderLetters();renderSuggestions();renderHistory();
+}
+$('mode-letters').onclick=function(){switchMode('letters')};
+$('mode-played').onclick=function(){switchMode('played')};
+$('rack').addEventListener('input',function(e){
+  state.racks[state.wave]=normal(e.target.value).toUpperCase();e.target.value=state.racks[state.wave];
+  state.visible=24;save();showError('');renderLetters();renderSuggestions();
+});
+$('clear-rack').onclick=function(){
+  state.racks[state.wave]='';$('rack').value='';state.visible=24;save();showError('');renderLetters();renderSuggestions();$('rack').focus();
+};
+$('played-word').addEventListener('input',function(e){e.target.value=normal(e.target.value).toUpperCase();showError('')});
+$('played-word').addEventListener('keydown',function(e){if(e.key==='Enter'){e.preventDefault();$('record-word').click()}});
+$('record-word').onclick=function(){advanceWithWord($('played-word').value,'played')};
+$('show-more').onclick=function(){state.visible+=24;save();renderSuggestions()};
+$('back').onclick=function(){if(state.wave===0)return;state.wave--;state.finished=false;state.visible=24;showError('');save();render();window.scrollTo({top:0,behavior:'smooth'})};
+$('restart').onclick=function(){if(!confirm('Restart your level 4 badge attempt? This clears all recorded words and letters.'))return;state=JSON.parse(JSON.stringify(defaults));showError('');save();render()};
+'ABCDEFGHIJKLMNOPQRSTUVWXYZ'.split('').forEach(function(ch){
+  var b=document.createElement('button');b.type='button';b.textContent=ch;
+  b.onclick=function(){state.racks[state.wave]+=ch;$('rack').value=state.racks[state.wave];state.visible=24;showError('');save();renderLetters();renderSuggestions()};
+  $('keypad').appendChild(b);
+});
+render();
 if('serviceWorker' in navigator&&location.protocol.startsWith('http'))window.addEventListener('load',function(){navigator.serviceWorker.register('./sw.js').catch(function(){})});
 })();
 </script>
