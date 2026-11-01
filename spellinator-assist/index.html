@@ -54,9 +54,9 @@ details summary{cursor:pointer;color:#ff9ed3;font-weight:750;font-size:.83rem;pa
 <label for="rack" class="biglabel">Letters currently available in the room</label>
 <input id="rack" class="field" inputmode="text" type="text" autocomplete="off" spellcheck="false" autocapitalize="characters" maxlength="32" placeholder="Type all available letters">
 <p class="hint">Only words made from THESE letters are suggested. Previously used letters cannot appear in any new word.</p>
-<div class="row"><span class="panel-title" style="margin:3px 0">Displayed letters</span><button id="clear-rack" class="smallbutton" type="button">Clear</button></div>
+<div class="row"><span class="panel-title" style="margin:3px 0">Displayed letters</span><div class="row"><button id="undo-letter" class="smallbutton" type="button">Undo last</button><button id="clear-rack" class="smallbutton" type="button">Clear</button></div></div>
 <div id="letter-tiles" class="letters empty"></div>
-<details><summary>Tap letters instead of typing</summary><div class="keypad" id="keypad"></div></details>
+<details open><summary>Tap available letters (used keys disappear)</summary><div class="keypad" id="keypad"></div></details>
 </div>
 <div id="played-mode" hidden>
 <label class="biglabel" for="played-word">What word did you successfully use?</label>
@@ -210,6 +210,16 @@ function renderLetters(){
   else Array.from(letters).forEach(function(ch){wrap.appendChild(tile(ch,blocked.has(ch)?'blocked':/[AEIOU]/.test(ch)?'vowel':''))});
   var locked=Array.from(blocked).sort();
   $('used-info').textContent=locked.length?'Locked from previous rounds: '+locked.join(' · ')+'. These cannot be used again.':'No letters locked from previous rounds yet.';
+  refreshKeypad();
+}
+function refreshKeypad(){
+  // A letter is one-use-only in the tap keyboard, and prior-round letters cannot be selected.
+  var hidden=new Set(normal(state.racks[state.wave])+usedBefore(state.wave));
+  Array.from($('keypad').children).forEach(function(button){
+    var unavailable=hidden.has(normal(button.textContent));
+    button.hidden=unavailable;button.disabled=unavailable;
+  });
+  $('undo-letter').disabled=!state.racks[state.wave];
 }
 function renderSuggestions(){
   var wrap=$('results');wrap.replaceChildren();
@@ -270,6 +280,13 @@ $('rack').addEventListener('input',function(e){
 $('clear-rack').onclick=function(){
   state.racks[state.wave]='';$('rack').value='';state.visible=24;save();showError('');renderLetters();renderSuggestions();$('rack').focus();
 };
+$('undo-letter').onclick=function(){
+  var rack=state.racks[state.wave];
+  if(!rack)return;
+  state.racks[state.wave]=rack.slice(0,-1);
+  $('rack').value=state.racks[state.wave];
+  state.visible=24;save();showError('');renderLetters();renderSuggestions();
+};
 $('played-word').addEventListener('input',function(e){e.target.value=normal(e.target.value).toUpperCase();showError('')});
 $('played-word').addEventListener('keydown',function(e){if(e.key==='Enter'){e.preventDefault();$('record-word').click()}});
 $('record-word').onclick=function(){advanceWithWord($('played-word').value,'played')};
@@ -278,7 +295,11 @@ $('back').onclick=function(){if(state.wave===0)return;state.wave--;state.finishe
 $('restart').onclick=function(){if(!confirm('Restart your level 4 badge attempt? This clears all recorded words and letters.'))return;state=JSON.parse(JSON.stringify(defaults));showError('');save();render()};
 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'.split('').forEach(function(ch){
   var b=document.createElement('button');b.type='button';b.textContent=ch;
-  b.onclick=function(){state.racks[state.wave]+=ch;$('rack').value=state.racks[state.wave];state.visible=24;showError('');save();renderLetters();renderSuggestions()};
+  b.onclick=function(){
+    if(new Set(normal(state.racks[state.wave])+usedBefore(state.wave)).has(normal(ch)))return;
+    state.racks[state.wave]+=ch;$('rack').value=state.racks[state.wave];
+    state.visible=24;showError('');save();renderLetters();renderSuggestions()
+  };
   $('keypad').appendChild(b);
 });
 render();
