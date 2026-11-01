@@ -46,7 +46,7 @@ main{max-width:530px;margin:auto;padding:9px 10px calc(18px + env(safe-area-inse
 .key.spent:before{content:"•";position:absolute;top:-2px;right:4px;color:#fbc18e}
 .key:active{transform:scale(.96)}
 .key-placeholder{visibility:hidden}
-.micro{font-size:.69rem;color:#aebbd1;margin:6px 1px 0;line-height:1.2}
+.rack-stats{font-size:.73rem;color:#bcd7ef;line-height:1.25;margin:-2px 1px 7px;font-weight:800}.rack-stats b{color:#68e0b8}.micro{font-size:.69rem;color:#aebbd1;margin:6px 1px 0;line-height:1.2}
 .answers{border-radius:13px;background:#111d30;border:1px solid #2b526e;padding:9px;margin-bottom:8px}
 .title-row{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:5px}
 .title-row strong{color:#d9f7ff;font-size:.89rem}
@@ -112,8 +112,8 @@ footer{margin-bottom:2px}
 <button type="button" class="subtle" id="manual-open">✓ Played a word</button>
 </header>
 <div class="mode-pick" role="group" aria-label="Choose how Spellinator's letters behave">
-<button id="mode-same" type="button">Same letters throughout<small>Plan 4 + 5 + 6 together</small></button>
-<button id="mode-change" type="button">Letters change each round<small>Find each word as you go</small></button>
+<button id="mode-change" type="button">Changing letters · Recommended<small>Enter each round's letters</small></button>
+<button id="mode-same" type="button">Same letters · Backup<small>Plan 4 + 5 + 6 together</small></button>
 </div>
 <div class="mode-note" id="mode-note"></div>
 <nav class="rounds" id="rounds" aria-label="Round progress"></nav>
@@ -121,6 +121,7 @@ footer{margin-bottom:2px}
 <section class="panel" id="entry">
 <div class="head"><strong id="entry-title">Tap letters you can see</strong><div class="tools"><button type="button" id="all-letters" hidden>A–Z</button><button type="button" id="undo">↶ Undo</button><button type="button" id="clear">Clear</button></div></div>
 <div class="rack" id="rack" aria-live="polite"></div>
+<div class="rack-stats" id="rack-stats" aria-live="off">Selected: 0 letters · 0 vowels · 0 consonants</div>
 <div class="keyboard" id="keyboard" role="group" aria-label="Alphabet letter buttons"></div>
 <button id="focus-top" type="button" class="fullplan-button" style="margin-top:8px" hidden>FOCUS ON THE 3 WORDS →</button>
 <div class="micro" id="keyboard-note">Grey = selected this round. <span style="color:#ffbf88">Orange dot = used earlier</span> (still tappable, but excluded from words).</div>
@@ -394,6 +395,9 @@ alphabet.split('').forEach(function(letter){
 });
 function renderQuick(){
  var rack=rackLetters(),prior=new Set(before(state.wave).toUpperCase());
+ var vowelCount=Array.from(rack).filter(function(ch){return 'AEIOU'.includes(ch)}).length;
+ var consonantCount=rack.length-vowelCount;
+ get('rack-stats').textContent='Selected: '+rack.length+' letters · '+vowelCount+' vowels · '+consonantCount+' consonants';
  var display=get('rack');display.replaceChildren();
  for(var i=0;i<rack.length;i++){
   var chip=document.createElement('span');chip.className='letter'+(prior.has(rack[i])?' spent':'');chip.textContent=rack[i];display.appendChild(chip);
@@ -449,7 +453,7 @@ function render(){
  get('mode-change').classList.toggle('active',!shared());
  get('mode-same').setAttribute('aria-pressed',String(shared()));
  get('mode-change').setAttribute('aria-pressed',String(!shared()));
- get('mode-note').textContent=shared()?'Enter the wall letters ONCE. We plan 3 complete words with no repeated letters. If the wall changes, switch to the other mode.':'Enter the new wall letters for EACH round. The helper remembers every letter already played.';
+ get('mode-note').textContent=shared()?'Backup mode: only use this if the same letters remain available in every round. It needs 15 distinct letters across the three words.':'Recommended: players report the wall letters CHANGE between rounds. Enter the visible letters afresh each round. Reported wall mix: about 4 vowels + 11 consonants (Y counts as a consonant). Not verified for Watford.';
  get('entry-title').textContent=shared()?'Tap ALL visible wall letters':'Tap letters you can see';
  get('all-letters').hidden=!shared();
  get('keyboard-note').textContent=shared()?'Keys stay in place; grey means selected. Use A–Z only when all 26 letters really are available.':'Grey = selected in this round. Orange dot = used earlier; you can enter it, but no suggestion will reuse it.';
