@@ -112,7 +112,7 @@ footer{font-size:.65rem;color:#8798ae;line-height:1.4;text-align:center;margin-t
 <div class="bottom"><span class="note">Only record a word the room accepted. Next round opens automatically.</span><button type="button" id="back">← Back</button></div>
 <footer>Unofficial helper · Activate's accepted-word list is not available. Recommendations favour familiar words, saving vowels early and leaving future possibilities. Future room tiles may change.</footer>
 </main>
-<script src="./words.js?v=9"></script>
+<script src="./words.js"></script>
 <script>
 (function(){
 'use strict';
@@ -247,10 +247,11 @@ function render(){
  }
  get('roundname').textContent='ROUND '+(wave+1)+' · '+required(wave)+' LETTERS';
  var beforeList=state.words.slice(0,wave).filter(Boolean);
- get('used').textContent=beforeList.length?'Used: '+beforeList.map(function(x){return x.toUpperCase()}).join(' / '):'No letters used yet';
+ get('used').textContent=state.words[wave]?'This round: '+state.words[wave].toUpperCase():beforeList.length?'Used: '+beforeList.map(function(x){return x.toUpperCase()}).join(' / '):'No letters used yet';
  get('entry').hidden=finished;get('answers').hidden=finished;get('manual').hidden=finished;
  get('back').disabled=wave===0&&!finished;
  get('played').maxLength=required(wave);
+ get('played').value=state.words[wave]?state.words[wave].toUpperCase():'';
  get('played').placeholder=required(wave)+'-letter word already played';
  get('finish').hidden=!finished;
  get('finish').replaceChildren();
@@ -260,8 +261,8 @@ function render(){
   get('finish').append(strong,info);
  }else{rankedFor(wave,usedMask(before(wave)));renderQuick()}
 }
-get('undo').addEventListener('click',function(){var s=state.racks[state.wave];if(s){state.racks[state.wave]=s.slice(0,-1);state.visible=3;save();renderQuick()}});
-get('clear').addEventListener('click',function(){state.racks[state.wave]='';state.visible=3;save();renderQuick()});
+get('undo').addEventListener('click',function(){var s=state.racks[state.wave];if(s){state.racks[state.wave]=s.slice(0,-1);state.visible=3;setError('');save();renderQuick()}});
+get('clear').addEventListener('click',function(){state.racks[state.wave]='';state.visible=3;setError('');save();renderQuick()});
 get('more').addEventListener('click',function(){state.visible+=6;save();renderQuick()});
 get('back').addEventListener('click',function(){
  if(state.wave===0)return;
