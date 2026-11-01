@@ -39,4 +39,14 @@ If you discover mid-attempt that the wall letters change, **switch from Same to 
 - Progress is saved locally on your device.
 - This helper cannot read live room letters, detect a win, or award a badge.
 
-Offline cache version: djsmarty-one-and-done-v11.
+## Player evidence (7 July 2026)
+
+A screenshot of players discussing the Hide-room Spellinator Level 4 badge reports that:
+- **Letters change between rounds**, and new letters may appear.
+- One player recalls **4 vowels and 11 consonants** on the wall (Y counted as consonant): this is a recollection, not independently confirmed for Watford.
+- Badge condition: **don't repeat any letter** across rounds. You do **not** have to use every wall letter.
+- Required word lengths are 4, 5, and 6 letters.
+
+Therefore **Letters change each round** is highlighted as the recommended mode. **Same letters** remains a backup option in case the actual room proves otherwise. The keyboard shows a live count of selected letters/vowels/consonants without enforcing the unverified 15-letter distribution.
+
+Offline cache version: djsmarty-one-and-done-v12.
