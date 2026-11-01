@@ -146,29 +146,34 @@ function validate(word,wave,needRack){
  if(needRack&&((usedMask(word)&usedMask(normal(state.racks[wave])))!==usedMask(word)))return 'Those letters are not all in your current selection.';
  return '';
 }
-function rank(){
- var wave=state.wave,rack=normal(state.racks[wave]);if(!rack)return [];
- var available=usedMask(rack),prior=usedMask(before(wave));
- var current=words.filter(function(e){return e.len===required(wave)&&(e.mask&available)===e.mask&&!(e.mask&prior)});
- if(!current.length)return [];
+var rankingCache={};
+function rankedFor(wave,prior){
+ var key=wave+'|'+prior;
+ if(rankingCache[key])return rankingCache[key];
+ var target=required(wave),current=words.filter(function(e){return e.len===target&&!(e.mask&prior)});
  if(wave===2){
-  return current.map(function(e){return {word:e.word,vowels:(e.word.match(/[aeiou]/g)||[]).length,score:e.freq}}).sort(function(a,b){return b.score-a.score||a.word.localeCompare(b.word)});
+  rankingCache[key]=current.map(function(e){return {word:e.word,vowels:(e.word.match(/[aeiou]/g)||[]).length,score:e.freq,freq:e.freq,mask:e.mask}})
+    .sort(function(a,b){return b.score-a.score||a.word.localeCompare(b.word)});
+  return rankingCache[key];
  }
- // Current wall's exact letters are known, but future walls may change.
- // Estimate retained common five- and six-letter choices globally, not from current wall letters.
- var future=futureWords.filter(function(e){return e.len>required(wave)&&!(e.mask&prior)&&e.freq>=11500});
- var total=0;
- for(var j=0;j<future.length;j++)total+=Math.pow(future[j].freq/20000,3);
- return current.map(function(e){
-  var retained=0;
-  for(var j=0;j<future.length;j++)if(!(future[j].mask&e.mask))retained+=Math.pow(future[j].freq/20000,3);
-  var futureRatio=total?retained/total:0;
+ var future=futureWords.filter(function(e){return e.len>target&&!(e.mask&prior)&&e.freq>=11500});
+ var futureWeights=future.map(function(e){return Math.pow(e.freq/20000,3)});
+ var total=futureWeights.reduce(function(sum,n){return sum+n},0);
+ rankingCache[key]=current.map(function(e){
+  var kept=0;
+  for(var j=0;j<future.length;j++)if(!(future[j].mask&e.mask))kept+=futureWeights[j];
   var vowels=(e.word.match(/[aeiou]/g)||[]).length;
   var y=e.word.indexOf('y')>=0?1:0;
   var familiar=Math.max(0,Math.min(1,(e.freq-9500)/10500));
-  var score=80*futureRatio+36*familiar-12*vowels-3*y;
-  return {word:e.word,vowels:vowels,score:score,freq:e.freq};
+  return {word:e.word,vowels:vowels,score:80*(total?kept/total:0)+36*familiar-12*vowels-3*y,freq:e.freq,mask:e.mask};
  }).sort(function(a,b){return b.score-a.score||b.freq-a.freq||a.word.localeCompare(b.word)});
+ return rankingCache[key];
+}
+function rank(){
+ var rack=normal(state.racks[state.wave]),prior=usedMask(before(state.wave));
+ if(!rack)return [];
+ var available=usedMask(rack);
+ return rankedFor(state.wave,prior).filter(function(e){return (e.mask&available)===e.mask});
 }
 function setError(message){get('error').hidden=!message;get('error').textContent=message||''}
 function record(word,source){
@@ -253,7 +258,7 @@ function render(){
   var strong=document.createElement('strong');strong.textContent='3 / 3 ROUNDS RECORDED';
   var info=document.createElement('span');info.textContent=state.words.map(function(w){return w.toUpperCase()}).join(' → ')+' · Check Activate for the badge.';
   get('finish').append(strong,info);
- }else renderQuick();
+ }else{rankedFor(wave,usedMask(before(wave)));renderQuick()}
 }
 get('undo').addEventListener('click',function(){var s=state.racks[state.wave];if(s){state.racks[state.wave]=s.slice(0,-1);state.visible=3;save();renderQuick()}});
 get('clear').addEventListener('click',function(){state.racks[state.wave]='';state.visible=3;save();renderQuick()});
