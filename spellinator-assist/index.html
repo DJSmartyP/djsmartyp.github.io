@@ -3,302 +3,269 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<meta name="theme-color" content="#100d1b">
-<meta name="description" content="DJ Smarty's one-purpose Spellinator level 4 badge word helper. Only words made from the letters on screen and never-repeated letters.">
-<link rel="manifest" href="./manifest.webmanifest">
+<meta name="theme-color" content="#111225">
+<meta name="description" content="Fast one-screen Spellinator Level 4 One and Done badge helper. Fixed keyboard, 4/5/6-letter rounds, zero reused letters.">
 <link rel="icon" href="./icon.svg" type="image/svg+xml">
-<title>One and Done 2.0 • DJ Smarty</title>
+<link rel="manifest" href="./manifest.webmanifest">
+<title>One & Done 2.0 • DJ Smarty</title>
 <style>
-:root{color-scheme:dark;--bg:#0b0c15;--surface:#161626;--edge:#3a3452;--text:#fff7ff;--muted:#b7b4c8;--pink:#ff4fb3;--cyan:#5ceaff;--green:#83ffc0;--orange:#ffd190}
-*{box-sizing:border-box}html{background:var(--bg)}body{margin:0;background:radial-gradient(ellipse at top,#6b20483b,transparent 56%),var(--bg);color:var(--text);font-family:system-ui,-apple-system,Segoe UI,Arial,sans-serif;padding-bottom:calc(22px + env(safe-area-inset-bottom));min-height:100vh}
-button,input,select{font:inherit}button{cursor:pointer;touch-action:manipulation}button:disabled{cursor:not-allowed;opacity:.45}button:focus-visible,input:focus-visible,select:focus-visible{outline:3px solid var(--cyan);outline-offset:3px}
-main{width:min(100%,700px);margin:auto;padding:17px clamp(12px,3vw,26px)}
-header{padding:12px 4px 14px}.eyebrow{font-size:.74rem;font-weight:900;letter-spacing:.17em;color:var(--pink)}h1{margin:5px 0;font-size:clamp(1.95rem,7vw,3.6rem);line-height:1.05;letter-spacing:-.045em;text-transform:uppercase}h1 span{color:var(--pink)}header p{color:#d5cadc;font-size:.95rem;line-height:1.5;margin:11px 0 0}
-.panel{background:linear-gradient(145deg,#1d1a30,#131521);border:1px solid var(--edge);border-radius:17px;padding:16px;margin-bottom:13px}.accent{border-color:#b7468499}.panel-title{font-size:.76rem;color:#c8c4d9;font-weight:900;letter-spacing:.11em;text-transform:uppercase;margin:0 0 10px}
-.wavebar{display:flex;gap:8px}.wave{flex:1;border:1px solid #504861;border-radius:11px;padding:11px 3px;background:#222139;color:#ddd5eb;font-weight:800;font-size:.82rem;text-align:center}.wave strong{display:block;font-size:1.27rem}.wave.current{background:#3d2242;border:2px solid var(--pink);padding:10px 2px;color:white}.wave.complete{border-color:#367554;background:#183a2b;color:var(--green)}
-.row{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px}
-.biglabel{display:block;font-weight:850;margin:12px 0 7px;font-size:1rem}.rack{width:100%;font-weight:850;font-size:1.45rem;letter-spacing:.16em;text-transform:uppercase;padding:14px 13px;min-height:61px;background:#090c17;border:2px solid #7f6286;border-radius:12px;color:white}.rack::placeholder{font-size:.93rem;font-weight:500;letter-spacing:0;text-transform:none;color:#8d849b}.hint{font-size:.82rem;line-height:1.5;color:var(--muted);margin:8px 0}.smallbutton{padding:9px 12px;background:#2c2b41;border:1px solid #5e5772;border-radius:9px;color:white;font-weight:750}.smallbutton:active{background:#504469}
-.letters{display:flex;gap:5px;flex-wrap:wrap;margin:11px 0}.tile{width:34px;height:38px;border:1px solid #5b5c8d;border-radius:7px;display:flex;align-items:center;justify-content:center;background:#2e304c;font-size:1rem;font-weight:850}.tile.blocked{background:#32202f;color:#e8a6af;text-decoration:line-through;border-color:#9d465d}.tile.vowel{border-color:#99b5f8}.tile.used{background:#214b3d;color:#a6ffce;border-color:#508870}
-.letters.empty{color:var(--muted);font-size:.8rem}
-.warn{border:1px solid #8e593e;background:#37251e;padding:11px;border-radius:10px;color:#ffd0a7;font-size:.84rem;line-height:1.45}
-.info{background:#1b2734;border-left:3px solid var(--cyan);padding:10px 12px;border-radius:0 8px 8px 0;font-size:.83rem;color:#d7f7ff;line-height:1.45}
-.word-header{display:flex;gap:8px;justify-content:space-between;align-items:center;margin:0 0 10px}.word-header b{font-size:1.02rem}.count{color:var(--muted);font-size:.78rem}.wordgrid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
-.word{min-height:56px;background:#25243c;border:1px solid #57516c;border-radius:10px;color:white;font-weight:850;letter-spacing:.035em;padding:8px 2px;font-size:clamp(.9rem,3vw,1.05rem);overflow-wrap:anywhere}.word small{display:block;color:#c8c1d5;font-size:.65rem;font-weight:500;margin-top:4px}.word.selected{background:#205140;border:2px solid var(--green);padding:7px 1px}.word.selected small{color:#b7ffd6}
-.words-empty{color:#e9cfe2;line-height:1.55;border:1px dashed #5e4c66;border-radius:12px;padding:17px;font-size:.91rem}
-.selected-panel{padding:12px;border:1px solid #4e9f73;background:#183b2e;border-radius:10px;margin-top:11px;color:#ceffdc;font-size:.89rem}.selected-panel b{font-size:1.12rem}
-.actions{display:grid;grid-template-columns:1fr 2fr;gap:9px;margin:15px 0 5px}.back{border:1px solid #645c74;border-radius:11px;background:#27273d;color:white;font-weight:800;min-height:59px}.next{background:linear-gradient(110deg,#ff4fb3,#ee9cd6);border:0;border-radius:11px;color:#24091c;font-size:1.1rem;font-weight:950;min-height:59px}
-.history{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:7px}.history-card{border:1px solid #504765;background:#242038;border-radius:10px;padding:11px 6px;text-align:center}.history-card strong{font-size:.73rem;color:#c6c1d3;display:block}.history-card b{display:block;margin-top:6px;font-size:.85rem;overflow-wrap:anywhere}.history-card.current{border-color:var(--pink)}.history-card.done{border-color:#387a58}
-footer{font-size:.78rem;color:#aaa3b9;line-height:1.55;text-align:center;padding:12px 8px}footer a{color:#ff91cf}.key-toggle{background:none;border:0;color:#ff9fd4;padding:8px 0;text-decoration:underline;font-size:.82rem}.keypad{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:4px;margin-top:8px}.keypad button{min-width:0;background:#29283c;color:white;border:1px solid #6c5872;border-radius:6px;height:42px;font-weight:850;font-size:.88rem}.keypad button.blocked{color:#9f8997;text-decoration:line-through}
-.end{border:1px solid #488c64;background:#1e4836;border-radius:11px;padding:13px;color:#c4ffe0}.end b{font-size:1.1rem}
-details summary{cursor:pointer;color:#ff9ed3;font-weight:750;font-size:.83rem;padding:5px 0}
-@media(min-width:520px){.wordgrid{grid-template-columns:repeat(4,minmax(0,1fr))}.panel{padding:20px}.tile{width:40px;height:44px}}@media(max-width:340px){.wordgrid{grid-template-columns:repeat(2,minmax(0,1fr))}.tile{width:29px;height:32px}}
-#word-panel{padding:12px 14px}#word-panel .wordgrid{gap:5px}.fast-tips{font-size:.75rem;color:#b7eccf;padding:7px 0 0}.keypad{grid-template-columns:repeat(9,minmax(0,1fr));gap:3px}.keypad button{height:38px;font-size:.83rem}.word{min-height:55px}.mode-switch{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:14px 0 11px}.mode-switch button{padding:14px 8px;border-radius:10px;background:#28263b;color:#e8dcea;border:1px solid #635471;font-weight:850;font-size:.93rem}.mode-switch button.on{border:2px solid var(--pink);background:#55294c;color:#fff;padding:13px 7px}.field{width:100%;min-height:60px;font-size:1.45rem;font-weight:850;letter-spacing:.13em;background:#0a0b15;border:2px solid #81628b;color:white;border-radius:11px;padding:13px;text-transform:uppercase}.field::placeholder{font-size:.88rem;letter-spacing:0;color:#aea4b5;font-weight:500}.full-action{display:block;width:100%;margin-top:11px;background:linear-gradient(110deg,#ff4fb3,#eda4d5);border:0;color:#260b20;border-radius:12px;min-height:58px;font-weight:950;font-size:1.04rem}.feedback{margin:10px 0;padding:10px 12px;background:#3b2729;color:#ffd2c5;border:1px solid #87525c;border-radius:9px;font-size:.9rem}.word small{font-size:.69rem}.word:active{background:#483057}.mode-head{font-size:.95rem;font-weight:850;margin:13px 0 8px}.state-note{font-size:.85rem;color:#cdd7ff;background:#20243d;border:1px solid #424f79;border-radius:10px;padding:11px;line-height:1.5} [hidden]{display:none!important}
+:root{color-scheme:dark;--bg:#090c18;--surface:#161d30;--line:#303c55;--ink:#f5f8ff;--muted:#aabbd1;--cyan:#52dcfc;--pink:#ff6dbe;--green:#78efb5;--orange:#ffbe7a}
+*{box-sizing:border-box}
+html{background:var(--bg)}
+body{margin:0;background:linear-gradient(180deg,#241936 0,#090c18 280px);color:var(--ink);font:500 15px/1.3 system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;overscroll-behavior-y:contain}
+button,input{font:inherit}button{touch-action:manipulation;cursor:pointer;-webkit-tap-highlight-color:transparent}button:disabled{opacity:.4;cursor:default}
+button:focus-visible,input:focus-visible,summary:focus-visible{outline:3px solid var(--cyan);outline-offset:2px}
+main{max-width:530px;margin:auto;padding:9px 10px calc(18px + env(safe-area-inset-bottom))}
+.top{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:8px}
+.brand{font-size:clamp(19px,5.5vw,26px);font-weight:1000;letter-spacing:-.05em;line-height:1;white-space:nowrap}
+.brand em{font-style:normal;color:var(--pink)}.brand small{font-size:.63rem;letter-spacing:.07em;color:var(--muted);display:block;margin-top:4px}
+.subtle{background:transparent;border:1px solid #506079;border-radius:9px;padding:8px 11px;color:#cddaf0;font-weight:800;font-size:.79rem}
+.rounds{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:5px;margin-bottom:8px}
+.round{border:1px solid #4b526b;background:#222940;color:#bac6db;padding:5px 3px;border-radius:9px;min-height:49px}
+.round b{display:block;font-weight:950;font-size:1.08rem;letter-spacing:-.02em}.round span{display:block;font-size:.66rem;font-weight:800;white-space:nowrap}
+.round.active{border:2px solid var(--cyan);background:#17344c;color:#fff;padding:4px 2px}
+.round.done{border-color:#3d8c6b;background:#153a31;color:var(--green)}
+.round:disabled{opacity:.55}
+.statusline{display:flex;justify-content:space-between;align-items:center;gap:8px;min-height:21px;margin-bottom:5px}
+.roundname{font-size:.74rem;letter-spacing:.06em;font-weight:950;color:var(--cyan);text-transform:uppercase}
+.used{font-size:.68rem;color:#b9c8de;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.panel{border:1px solid #44516b;border-radius:13px;background:#171c2f;padding:9px 9px 8px;margin-bottom:9px}
+.head{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:5px;min-height:25px}
+.head strong{font-size:.92rem;letter-spacing:.01em}
+.tools{display:flex;gap:5px;flex-shrink:0}.tools button{padding:5px 9px;border-radius:8px;border:1px solid #56657c;background:#272f47;color:#e2ebfd;font-size:.73rem;font-weight:800}
+.rack{display:flex;align-items:center;flex-wrap:wrap;gap:4px;padding:6px 8px;min-height:36px;border:1px solid #4e607a;border-radius:9px;background:#0d1426;margin-bottom:7px}
+.rack:empty:before{content:"Tap the letters visible in the room";color:#97a5bf;font-size:.83rem}
+.letter{display:inline-flex;justify-content:center;align-items:center;min-width:24px;height:24px;padding:2px 4px;font-weight:900;border-radius:5px;background:#273d60;color:#eff9ff;border:1px solid #5484aa}
+.letter.spent{border-color:#ba667a;background:#493345;color:#ffc7cc;text-decoration:line-through}
+.keyboard{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:5px}
+.key{height:42px;min-width:0;position:relative;background:#25334e;border:1px solid #58708c;color:#fff;border-radius:8px;font-size:1.05rem;font-weight:950;transition:background .06s ease}
+.key.selected{background:#3c4250;border-color:#4c5360;color:#8593a9}
+.key.selected:after{content:"✓";position:absolute;right:2px;top:0;font-size:.58rem;color:#a0abc0}
+.key.spent:not(.selected){border-color:#a97954;color:#ffca93}
+.key.spent:not(.selected):before{content:"•";position:absolute;top:-2px;right:4px;color:#fbc18e}
+.key:active{transform:scale(.96)}
+.key-placeholder{visibility:hidden}
+.micro{font-size:.69rem;color:#aebbd1;margin:6px 1px 0;line-height:1.2}
+.answers{border-radius:13px;background:#111d30;border:1px solid #2b526e;padding:9px;margin-bottom:8px}
+.title-row{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:5px}
+.title-row strong{color:#d9f7ff;font-size:.89rem}
+.title-row span{color:#acbfd4;font-size:.7rem}
+.recs{display:grid;gap:5px}
+.rec{display:grid;grid-template-columns:1fr auto auto;align-items:center;gap:6px;width:100%;min-height:44px;text-align:left;padding:5px 8px;border:1px solid #506783;border-radius:9px;background:#202e49;color:#f6faff}
+.rec.best{border-color:#57dfae;background:#183a3c}
+.rec .word{font-size:1.29rem;font-weight:950;letter-spacing:.055em;line-height:1}
+.rec .cost{font-size:.7rem;color:#a9e9c7;font-weight:800;white-space:nowrap}
+.rec .go{font-size:.79rem;border-radius:6px;background:#2e9773;padding:7px 8px;color:white;font-weight:950;white-space:nowrap}
+.rec:not(.best) .go{background:#385f83}
+.rec:active{transform:scale(.99);background:#2b435a}
+.empty{min-height:48px;display:flex;align-items:center;font-size:.84rem;color:#ced8ec;line-height:1.35;padding:6px}
+.extra{width:100%;margin-top:5px;background:#24334c;border:1px solid #466077;color:#d5e8f7;font-size:.77rem;font-weight:900;border-radius:7px;min-height:33px}
+.manual{border:1px solid #394762;border-radius:11px;background:#171e30;margin-bottom:7px}
+.manual summary{list-style:none;display:flex;justify-content:space-between;align-items:center;padding:11px 12px;font-weight:900;color:#eee2f5;cursor:pointer;font-size:.82rem}
+.manual summary::-webkit-details-marker{display:none}
+.manual summary:after{content:"＋";font-size:1rem;color:var(--pink)}
+.manual[open] summary:after{content:"−"}
+.manual form{display:flex;gap:6px;padding:0 10px 11px}
+.manual input{width:100%;min-width:0;flex:1;background:#0b1322;color:#fff;border:2px solid #6b7998;border-radius:8px;font-size:1rem;font-weight:900;letter-spacing:.09em;padding:10px;text-transform:uppercase}
+.manual input::placeholder{letter-spacing:0;font-size:.79rem;color:#9cb0c9;font-weight:500}
+.manual button{white-space:nowrap;padding:9px 13px;border:0;border-radius:8px;background:#4be5ac;color:#11392c;font-weight:1000;font-size:.86rem}
+.bottom{display:flex;justify-content:space-between;align-items:center;gap:7px;margin-top:6px}
+.bottom .note{color:#a6b3c6;font-size:.67rem;max-width:300px;line-height:1.3}
+.bottom button{border:1px solid #56647d;background:#273147;color:#e2ebff;border-radius:7px;padding:7px 10px;font-size:.74rem;font-weight:850;white-space:nowrap}
+.error{border:1px solid #a96b56;color:#ffe2cb;background:#402b29;border-radius:9px;padding:8px 10px;font-weight:750;font-size:.8rem;margin-bottom:6px}
+.finish{border:1px solid #3ea87d;color:#dcffe7;background:#194432;border-radius:12px;padding:18px 12px;margin-bottom:10px;font-weight:800;text-align:center}
+.finish strong{font-size:1.3rem;display:block;margin-bottom:5px}
+footer{font-size:.65rem;color:#8798ae;line-height:1.4;text-align:center;margin-top:8px}
+[hidden]{display:none!important}
+@media(max-width:360px){main{padding-left:7px;padding-right:7px}.key{height:39px}.rec{min-height:43px}.panel{padding:7px}.answers{padding:7px}.rack{padding:5px}.brand{font-size:20px}}
+@media(min-width:550px){main{padding-top:22px}.key{height:48px}.rec{min-height:50px}}
 </style>
 </head>
 <body>
 <main>
-<header>
-<div class="eyebrow">DJ SMARTY • ACTIVATE WATFORD</div>
-<h1>ONE &amp; <span>DONE 2.0</span></h1>
-<p><strong>Spellinator • Level 4 only.</strong> Round 1: four letters. Round 2: five. Round 3: six. Every letter can be used only once across all three answers.</p>
+<header class="top">
+<div class="brand">ONE <em>&amp; DONE</em><small>LEVEL 4 · DJ SMARTY · SPELLINATOR</small></div>
+<button type="button" class="subtle" id="reset">↻ Restart</button>
 </header>
-<section class="panel accent">
-<h2 class="panel-title">01 / Your current round</h2>
-<div class="wavebar" id="wavebar" aria-label="Round progress"></div>
-<p class="biglabel" id="round-label">Round 1 • 4-letter word</p>
-<div class="mode-switch" role="group" aria-label="How would you like to enter your answer?">
-<button type="button" id="mode-letters" aria-pressed="true">Enter letters<br><small>Find possible words</small></button>
-<button type="button" id="mode-played" aria-pressed="false">Enter played word<br><small>Save and advance</small></button>
-</div>
-<div id="letters-mode">
-<label for="rack" class="biglabel">Letters currently available in the room</label>
-<input id="rack" class="field" inputmode="text" type="text" autocomplete="off" spellcheck="false" autocapitalize="characters" maxlength="32" placeholder="Type all available letters">
-<p class="hint">Only words made from THESE letters are suggested. Previously used letters cannot appear in any new word.</p>
-<div class="row"><span class="panel-title" style="margin:3px 0">Displayed letters</span><div class="row"><button id="undo-letter" class="smallbutton" type="button">Undo last</button><button id="clear-rack" class="smallbutton" type="button">Clear</button></div></div>
-<div id="letter-tiles" class="letters empty"></div>
-<details open><summary>Tap visible letters (tapped keys disappear)</summary><div class="keypad" id="keypad"></div></details><div class="fast-tips">Tap each visible letter once. It disappears from the keypad. Suggestions update instantly below.</div></div><div id="played-mode" hidden>
-<label class="biglabel" for="played-word">What word did you successfully use?</label>
-<input class="field" id="played-word" type="text" autocomplete="off" spellcheck="false" autocapitalize="characters" maxlength="6" placeholder="Enter your played word">
-<p class="hint" id="played-hint">Type the exact 4-letter word you played. It does not require you to enter the available letters.</p>
-<button type="button" class="full-action" id="record-word">Record word &amp; next round →</button>
-</div>
-<div class="state-note" id="used-info" style="margin-top:14px"></div>
-<div class="feedback" id="error" role="alert" hidden></div>
+<nav class="rounds" id="rounds" aria-label="Round progress"></nav>
+<div class="statusline"><span class="roundname" id="roundname">ROUND 1 · 4 LETTERS</span><span class="used" id="used">Used: none</span></div>
+<section class="panel" id="entry">
+<div class="head"><strong>Tap letters you can see</strong><div class="tools"><button type="button" id="undo">↶ Undo</button><button type="button" id="clear">Clear</button></div></div>
+<div class="rack" id="rack" aria-live="polite"></div>
+<div class="keyboard" id="keyboard" role="group" aria-label="Alphabet letter buttons"></div>
+<div class="micro">Grey = selected this round. <span style="color:#ffbf88">Orange dot = used earlier</span> (still tappable, but excluded from words).</div>
 </section>
-<section class="panel accent" id="word-panel" style="margin-top:-6px">
-<div class="word-header"><b>02 / TOP PICKS — TAP TO ADVANCE</b><span class="count" id="match-count"></span></div>
-<div class="state-note" id="strategy-note" style="margin-bottom:8px">Tap a word only after Activate accepts it.</div>
-<div id="message" class="words-empty" role="status" aria-live="polite"></div>
-<div id="results" class="wordgrid"></div>
-<button id="show-more" class="smallbutton" type="button" style="margin-top:11px;width:100%" hidden>Show more words</button>
+<section class="answers" id="answers">
+<div class="title-row"><strong>BEST WORDS · TAP AFTER PLAYING</strong><span id="matchcount"></span></div>
+<div class="recs" id="suggestions"></div>
+<button id="more" type="button" class="extra" hidden>More word options</button>
 </section>
-<section class="panel">
-<h2 class="panel-title">03 / Words and locked letters</h2>
-<div class="history" id="history"></div>
-<p class="panel-title" style="margin:15px 0 4px">Letters already used in this attempt</p>
-<div class="letters" id="used-tiles"></div>
-<div id="finished"></div>
-<div class="row" style="margin-top:13px">
-<button id="back" class="back" type="button" style="padding:0 20px">← Previous round</button>
-<button id="restart" class="smallbutton" type="button">Restart attempt</button>
-</div>
-<p class="hint">If you entered the wrong word, go back and replace it. Later answers will be cleared to keep the letter history accurate.</p>
-</section>
-<footer>Unofficial helper, not affiliated with Activate. Word suggestions use a general English dictionary rather than Activate's official list, so some may be rejected. The badge must be confirmed in the real game. Your progress is stored on this device.</footer>
+<details class="manual" id="manual">
+<summary>Already played a word? Record it directly</summary>
+<form id="form">
+<input id="played" autocomplete="off" autocapitalize="characters" spellcheck="false" aria-label="Word already played" placeholder="Word accepted in the game" maxlength="6" enterkeyhint="go">
+<button type="submit" id="record">Save →</button>
+</form>
+</details>
+<div class="error" id="error" role="alert" hidden></div>
+<div class="finish" id="finish" hidden></div>
+<div class="bottom"><span class="note">Only record a word the room accepted. Next round opens automatically.</span><button type="button" id="back">← Back</button></div>
+<footer>Unofficial helper · Activate's accepted-word list is not available. Recommendations favour familiar words, saving vowels early and leaving future possibilities. Future room tiles may change.</footer>
 </main>
-<script src="./words.js?v=8"></script>
+<script src="./words.js?v=9"></script>
 <script>
 (function(){
 'use strict';
-var KEY='djsmarty-one-done-level4-v6';
-var defaults={wave:0,racks:['','',''],words:['','',''],mode:'letters',visible:6,finished:false};
-var state=JSON.parse(JSON.stringify(defaults));
+var STORE='djsmarty-one-done-level4-v6';
+var state={wave:0,racks:['','',''],words:['','',''],finished:false,visible:3};
+function normal(s){return String(s||'').toLowerCase().replace(/[^a-z]/g,'')}
+function unique(s){return new Set(s).size===s.length}
+function get(id){return document.getElementById(id)}
+function required(wave){return wave+4}
+function before(wave){return normal(state.words.slice(0,wave).join(''))}
+function usedMask(s){var mask=0;for(var i=0;i<s.length;i++)mask|=1<<(s.charCodeAt(i)-97);return mask}
+function save(){try{localStorage.setItem(STORE,JSON.stringify(state))}catch(e){}}
 try{
-  var saved=JSON.parse(localStorage.getItem(KEY)||'null');
-  if(saved&&Array.isArray(saved.racks)&&saved.racks.length===3&&Array.isArray(saved.words)&&saved.words.length===3){
-    state=Object.assign(state,saved);
-    state.wave=Math.min(2,Math.max(0,Number(state.wave)||0));
-    state.mode=state.mode==='played'?'played':'letters';
-  }
-}catch(ignore){}
-function $(id){return document.getElementById(id)}
-function normal(text){return String(text||'').toLowerCase().replace(/[^a-z]/g,'')}
-function requiredLength(wave){return 4+wave}
-function unique(word){return new Set(word).size===word.length}
-function usedBefore(wave){return normal(state.words.slice(0,wave).join(''))}
-function validateWord(word,wave,checkRack){
-  word=normal(word);
-  if(word.length!==requiredLength(wave))return 'Round '+(wave+1)+' needs exactly '+requiredLength(wave)+' letters.';
-  if(!unique(word))return 'You cannot repeat a letter inside the same word.';
-  var blocked=new Set(usedBefore(wave));
-  var repeated=Array.from(word).filter(function(ch){return blocked.has(ch)});
-  if(repeated.length)return 'Already used in an earlier round: '+Array.from(new Set(repeated)).join(', ').toUpperCase()+'. Choose different letters.';
-  if(checkRack){
-    var rack=normal(state.racks[wave]);
-    if(!rack)return 'Enter the current available letters first.';
-    var available=new Set(rack);
-    var absent=Array.from(word).filter(function(ch){return !available.has(ch)});
-    if(absent.length)return 'Not available in this round: '+Array.from(new Set(absent)).join(', ').toUpperCase()+'.';
-  }
-  return '';
+ var raw=JSON.parse(localStorage.getItem(STORE)||'null');
+ if(raw&&Array.isArray(raw.words)&&raw.words.length===3&&Array.isArray(raw.racks)&&raw.racks.length===3){
+  state.words=raw.words.map(normal);
+  state.racks=raw.racks.map(function(s){return Array.from(new Set(normal(s))).join('').toUpperCase()});
+  state.wave=Math.min(2,Math.max(0,Number(raw.wave)||0));
+  state.finished=!!raw.finished;
+ }
+}catch(e){}
+var words=(window.SPELL_WORDS||[]).filter(function(p){return /^[a-z]{4,6}$/.test(p[0])&&unique(p[0])})
+ .map(function(p){return {word:p[0],freq:Number(p[1])||1,mask:usedMask(p[0]),len:p[0].length}});
+var futureWords=words.filter(function(x){return x.len===5||x.len===6});
+function validate(word,wave,needRack){
+ word=normal(word);
+ if(word.length!==required(wave))return 'Round '+(wave+1)+' needs '+required(wave)+' letters.';
+ if(!unique(word))return 'You cannot repeat a letter in one word.';
+ var banned=usedMask(before(wave));
+ if(usedMask(word)&banned)return 'That repeats letters already used in an earlier round.';
+ if(needRack&&((usedMask(word)&usedMask(normal(state.racks[wave])))!==usedMask(word)))return 'Those letters are not all in your current selection.';
+ return '';
 }
-var dict=(window.SPELL_WORDS||[]).filter(function(entry){return /^[a-z]{4,6}$/.test(entry[0])&&unique(entry[0])}).map(function(entry){return {word:entry[0],freq:Number(entry[1])||1}});
-function wordMask(word){
-  var mask=0;
-  for(var i=0;i<word.length;i++)mask|=(1<<(word.charCodeAt(i)-97));
-  return mask;
+function rank(){
+ var wave=state.wave,rack=normal(state.racks[wave]);if(!rack)return [];
+ var available=usedMask(rack),prior=usedMask(before(wave));
+ var current=words.filter(function(e){return e.len===required(wave)&&(e.mask&available)===e.mask&&!(e.mask&prior)});
+ if(!current.length)return [];
+ if(wave===2){
+  return current.map(function(e){return {word:e.word,vowels:(e.word.match(/[aeiou]/g)||[]).length,score:e.freq}}).sort(function(a,b){return b.score-a.score||a.word.localeCompare(b.word)});
+ }
+ // Current wall's exact letters are known, but future walls may change.
+ // Estimate retained common five- and six-letter choices globally, not from current wall letters.
+ var future=futureWords.filter(function(e){return e.len>required(wave)&&!(e.mask&prior)&&e.freq>=11500});
+ var total=0;
+ for(var j=0;j<future.length;j++)total+=Math.pow(future[j].freq/20000,3);
+ return current.map(function(e){
+  var retained=0;
+  for(var j=0;j<future.length;j++)if(!(future[j].mask&e.mask))retained+=Math.pow(future[j].freq/20000,3);
+  var futureRatio=total?retained/total:0;
+  var vowels=(e.word.match(/[aeiou]/g)||[]).length;
+  var y=e.word.indexOf('y')>=0?1:0;
+  var familiar=Math.max(0,Math.min(1,(e.freq-9500)/10500));
+  var score=80*futureRatio+36*familiar-12*vowels-3*y;
+  return {word:e.word,vowels:vowels,score:score,freq:e.freq};
+ }).sort(function(a,b){return b.score-a.score||b.freq-a.freq||a.word.localeCompare(b.word)});
 }
-var futureWords=dict.filter(function(entry){return entry.word.length===5||entry.word.length===6}).map(function(entry){
-  return {mask:wordMask(entry.word),len:entry.word.length,freq:entry.freq,word:entry.word};
+function setError(message){get('error').hidden=!message;get('error').textContent=message||''}
+function record(word,source){
+ word=normal(word);
+ var err=validate(word,state.wave,source==='selection');
+ if(err){setError(err);return}
+ var changed=state.words[state.wave]!==word;
+ state.words[state.wave]=word;
+ if(changed)for(var i=state.wave+1;i<3;i++){state.words[i]='';state.racks[i]=''}
+ if(state.wave===2)state.finished=true;
+ else{state.wave++;state.finished=false}
+ state.visible=3;get('played').value='';get('manual').open=false;setError('');save();render();
+ window.scrollTo({top:0,behavior:'instant'});
+}
+function toggle(letter){
+ if(state.finished)return;
+ var s=state.racks[state.wave],ix=s.indexOf(letter);
+ state.racks[state.wave]=ix>=0?s.slice(0,ix)+s.slice(ix+1):s+letter;
+ state.visible=3;setError('');save();renderQuick();
+}
+var alphabet='ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+alphabet.split('').forEach(function(letter){
+ var b=document.createElement('button');b.type='button';b.className='key';b.textContent=letter;
+ b.setAttribute('aria-label','Select '+letter);b.addEventListener('click',function(){toggle(letter)});
+ get('keyboard').appendChild(b);
 });
-function suggestions(){
-  var rack=normal(state.racks[state.wave]);
-  if(!rack)return [];
-  var blocked=new Set(usedBefore(state.wave)),available=new Set(rack),length=requiredLength(state.wave);
-  var current=dict.filter(function(entry){
-    return entry.word.length===length&&Array.from(entry.word).every(function(ch){return available.has(ch)&&!blocked.has(ch)});
-  });
-  var previouslyUsedMask=wordMask(usedBefore(state.wave));
-  var nextPools=state.wave===0?[5,6]:state.wave===1?[6]:[];
-  var remainingFuture=futureWords.filter(function(entry){return nextPools.indexOf(entry.len)!==-1&&(entry.mask&previouslyUsedMask)===0});
-  var totalWeight=remainingFuture.reduce(function(sum,entry){return sum+Math.max(1,entry.freq)},0);
-  return current.map(function(entry){
-    var vowels=(entry.word.match(/[aeiou]/g)||[]).length,mask=wordMask(entry.word);
-    var preserved=0;
-    if(state.wave<2){
-      for(var i=0;i<remainingFuture.length;i++){
-        if((remainingFuture[i].mask&mask)===0)preserved+=Math.max(1,remainingFuture[i].freq);
-      }
-    }
-    var flexibility=totalWeight?preserved/totalWeight:0;
-    var familiarity=Math.max(0,Math.min(1,(entry.freq-10000)/10000));
-    // Potential future racks are unknown; dictionary flexibility is a heuristic, not a prediction.
-    // For rounds 1/2 use flexibility, low vowel cost, and familiar words together.
-    var score=state.wave===2?familiarity*100:(flexibility*65)+(familiarity*24)-(vowels*7);
-    return {word:entry.word,freq:entry.freq,vowels:vowels,flexibility:flexibility,score:score};
-  }).sort(function(a,b){return b.score-a.score||b.freq-a.freq||a.word.localeCompare(b.word)});
-}
-function save(){try{localStorage.setItem(KEY,JSON.stringify(state))}catch(ignore){}}
-function showError(msg){$('error').hidden=!msg;$('error').textContent=msg||''}
-function advanceWithWord(raw,source){
-  var word=normal(raw),error=validateWord(word,state.wave,source==='letters');
-  if(error){showError(error);return false}
-  var changed=state.words[state.wave]!==word;
-  state.words[state.wave]=word;
-  if(changed){
-    for(var i=state.wave+1;i<3;i++){state.words[i]='';state.racks[i]=''}
-  }
-  state.visible=6;
-  if(state.wave===2)state.finished=true;
-  else{state.finished=false;state.wave++}
-  $('played-word').value='';
-  showError('');
-  save();render();
-  window.scrollTo({top:0,behavior:'smooth'});
-  return true;
-}
-function switchMode(mode){state.mode=mode==='played'?'played':'letters';showError('');save();renderMode()}
-function renderMode(){
-  var playing=state.mode==='played';
-  $('mode-letters').classList.toggle('on',!playing);
-  $('mode-played').classList.toggle('on',playing);
-  $('mode-letters').setAttribute('aria-pressed',String(!playing));
-  $('mode-played').setAttribute('aria-pressed',String(playing));
-  $('letters-mode').hidden=playing;
-  $('played-mode').hidden=!playing;
-  $('word-panel').hidden=playing||state.finished;
-  $('played-hint').textContent='Enter the '+requiredLength(state.wave)+'-letter word the room accepted, then tap Record. The letters will be blocked from all later answers.';
-}
-function renderProgress(){
-  var wrap=$('wavebar');wrap.replaceChildren();
-  for(var i=0;i<3;i++){
-    var b=document.createElement('button');b.type='button';
-    b.className='wave'+(i===state.wave?' current':state.words[i]?' complete':'');
-    b.innerHTML='<strong>'+requiredLength(i)+' letters</strong>Round '+(i+1);
-    b.disabled=i>state.wave;
-    (function(round){b.onclick=function(){if(round>state.wave)return;state.wave=round;state.finished=false;state.visible=6;save();render()}})(i);
-    wrap.appendChild(b);
-  }
-}
-function tile(letter,cls){var e=document.createElement('span');e.className='tile'+(cls?' '+cls:'');e.textContent=letter;return e}
-function renderLetters(){
-  var letters=normal(state.racks[state.wave]).toUpperCase(),blocked=new Set(usedBefore(state.wave).toUpperCase()),wrap=$('letter-tiles');
-  wrap.replaceChildren();wrap.classList.toggle('empty',!letters);
-  if(!letters)wrap.textContent='Enter the letters visible right now.';
-  else Array.from(letters).forEach(function(ch){wrap.appendChild(tile(ch,blocked.has(ch)?'blocked':/[AEIOU]/.test(ch)?'vowel':''))});
-  var locked=Array.from(blocked).sort();
-  $('used-info').textContent=locked.length?'Locked from previous rounds: '+locked.join(' · ')+'. These cannot be used again.':'No letters locked from previous rounds yet.';
-  refreshKeypad();
-}
-function refreshKeypad(){
-  // Only letters already tapped this round disappear. Prior-round letters may still be entered as visible wall tiles, but are excluded from words.
-  var hidden=new Set(normal(state.racks[state.wave]));
-  Array.from($('keypad').children).forEach(function(button){
-    var unavailable=hidden.has(normal(button.textContent));
-    button.hidden=unavailable;button.disabled=unavailable;
-  });
-  $('undo-letter').disabled=!state.racks[state.wave];
-}
-function renderSuggestions(){
-  var wrap=$('results');wrap.replaceChildren();
-  var matches=suggestions(),rack=normal(state.racks[state.wave]);
-  $('match-count').textContent=rack?matches.length+' matches':'';
-  $('strategy-note').textContent=state.wave===2?'Final round: prioritising familiar 6-letter words that satisfy the lockout rule.': 'Ranked for the best balance of word familiarity, fewer vowels, and keeping common future '+(state.wave===0?'5- and 6-letter':'6-letter')+' words possible. Future tiles may change, so this is an estimate.';
-  $('message').hidden=!!rack&&matches.length>0;
-  $('message').textContent=!rack?'Enter the letters available in the room to see '+requiredLength(state.wave)+'-letter word suggestions.':matches.length?'':'No '+requiredLength(state.wave)+'-letter word found using these letters without repeating anything you already played. Check your letters.';
-  matches.slice(0,state.visible).forEach(function(entry){
-    var b=document.createElement('button');b.type='button';b.className='word';b.textContent=entry.word.toUpperCase();
-    var small=document.createElement('small');
-    small.textContent=state.wave===2?'Familiar word candidate':entry.vowels+' vowel'+(entry.vowels===1?'':'s')+' · '+(entry.flexibility>=0.50?'strong':entry.flexibility>=0.25?'some':'limited')+' reserve';
-    b.appendChild(small);
-    b.onclick=function(){advanceWithWord(entry.word,'letters')};
-    wrap.appendChild(b);
-  });
-  $('show-more').hidden=matches.length<=state.visible;
-  $('show-more').textContent='Show more words ('+(matches.length-state.visible)+')';
-}
-function renderHistory(){
-  var wrap=$('history');wrap.replaceChildren();
-  state.words.forEach(function(word,i){
-    var card=document.createElement('div');
-    card.className='history-card'+(i===state.wave?' current':word?' done':'');
-    var label=document.createElement('strong');label.textContent='ROUND '+(i+1)+' · '+requiredLength(i)+' LETTERS';
-    var text=document.createElement('b');text.textContent=word?word.toUpperCase():'—';
-    card.append(label,text);wrap.appendChild(card);
-  });
-  var used=Array.from(new Set(normal(state.words.join('')).toUpperCase())).sort();
-  var wrapUsed=$('used-tiles');wrapUsed.replaceChildren();wrapUsed.classList.toggle('empty',used.length===0);
-  if(!used.length)wrapUsed.textContent='None yet.';
-  else used.forEach(function(ch){wrapUsed.appendChild(tile(ch,'used'))});
-  $('finished').replaceChildren();
-  if(state.finished){
-    var note=document.createElement('div');note.className='end';
-    note.textContent='All three rounds recorded! Check Activate to confirm the badge was awarded.';
-    $('finished').appendChild(note);
-  }
-  $('back').disabled=state.wave===0;
+function renderQuick(){
+ var rack=state.racks[state.wave],prior=new Set(before(state.wave).toUpperCase());
+ var display=get('rack');display.replaceChildren();
+ for(var i=0;i<rack.length;i++){
+  var chip=document.createElement('span');chip.className='letter'+(prior.has(rack[i])?' spent':'');chip.textContent=rack[i];display.appendChild(chip);
+ }
+ for(var i=0;i<26;i++){
+  var btn=get('keyboard').children[i],letter=alphabet[i],selected=rack.indexOf(letter)>=0,spent=prior.has(letter);
+  btn.classList.toggle('selected',selected);btn.classList.toggle('spent',spent);
+  btn.setAttribute('aria-pressed',String(selected));
+  btn.setAttribute('aria-label',letter+(selected?' selected - tap to remove':spent?' used earlier - can add to wall letters':' - tap to add'));
+ }
+ get('undo').disabled=!rack;get('clear').disabled=!rack;
+ var matches=rank(),area=get('suggestions');area.replaceChildren();
+ get('matchcount').textContent=rack?matches.length+' options':'';
+ if(!rack||rack.length<required(state.wave)){
+  var empty=document.createElement('div');empty.className='empty';
+  empty.textContent='Tap '+(required(state.wave)-rack.length>0?required(state.wave)-rack.length:'more')+' more available letters to begin.';
+  area.appendChild(empty);
+ }else if(!matches.length){
+  var empty=document.createElement('div');empty.className='empty';
+  empty.textContent='No safe '+required(state.wave)+'-letter words yet. Tap more wall letters; orange-marked letters do not count for the badge.';
+  area.appendChild(empty);
+ }else matches.slice(0,state.visible).forEach(function(e,i){
+  var b=document.createElement('button');b.type='button';b.className='rec'+(i===0?' best':'');
+  var word=document.createElement('span');word.className='word';word.textContent=e.word.toUpperCase();
+  var cost=document.createElement('span');cost.className='cost';cost.textContent=state.wave===2?'Final':e.vowels+' vowel'+(e.vowels===1?'':'s');
+  var go=document.createElement('span');go.className='go';go.textContent='USED ✓';
+  b.append(word,cost,go);b.setAttribute('aria-label','Record '+e.word+' as successfully played and advance');
+  b.addEventListener('click',function(){record(e.word,'selection')});area.appendChild(b)
+ });
+ get('more').hidden=matches.length<=state.visible;
+ get('more').textContent='More options · '+Math.max(0,matches.length-state.visible)+' remaining';
 }
 function render(){
-  state.racks=state.racks.map(function(x){return normal(x).toUpperCase()});
-  $('round-label').textContent='Round '+(state.wave+1)+' • '+requiredLength(state.wave)+'-letter word';
-  $('rack').value=state.racks[state.wave];
-  $('played-word').value=state.words[state.wave]?state.words[state.wave].toUpperCase():'';
-  $('played-word').maxLength=requiredLength(state.wave);
-  $('played-word').placeholder=requiredLength(state.wave)+'-letter word already played';
-  $('record-word').disabled=state.finished;
-  $('record-word').textContent=state.wave===2?'Record & finish ✓':'Record word & next round →';
-  renderProgress();renderMode();renderLetters();renderSuggestions();renderHistory();
+ var wave=state.wave,finished=state.finished;
+ var el=get('rounds');el.replaceChildren();
+ for(var i=0;i<3;i++){
+  var b=document.createElement('button');b.type='button';
+  b.className='round'+(i===wave?' active':'')+(state.words[i]?' done':'');
+  b.innerHTML='<b>'+required(i)+' letters</b><span>Round '+(i+1)+(state.words[i]?' ✓':'')+'</span>';
+  b.disabled=i>wave;
+  (function(round){b.addEventListener('click',function(){if(round>wave)return;state.wave=round;state.finished=false;state.visible=3;save();render()})})(i);
+  el.appendChild(b);
+ }
+ get('roundname').textContent='ROUND '+(wave+1)+' · '+required(wave)+' LETTERS';
+ var beforeList=state.words.slice(0,wave).filter(Boolean);
+ get('used').textContent=beforeList.length?'Used: '+beforeList.map(function(x){return x.toUpperCase()}).join(' / '):'No letters used yet';
+ get('entry').hidden=finished;get('answers').hidden=finished;get('manual').hidden=finished;
+ get('back').disabled=wave===0&&!finished;
+ get('played').maxLength=required(wave);
+ get('played').placeholder=required(wave)+'-letter word already played';
+ get('finish').hidden=!finished;
+ get('finish').replaceChildren();
+ if(finished){
+  var strong=document.createElement('strong');strong.textContent='3 / 3 ROUNDS RECORDED';
+  var info=document.createElement('span');info.textContent=state.words.map(function(w){return w.toUpperCase()}).join(' → ')+' · Check Activate for the badge.';
+  get('finish').append(strong,info);
+ }else renderQuick();
 }
-$('mode-letters').onclick=function(){switchMode('letters')};
-$('mode-played').onclick=function(){switchMode('played')};
-$('rack').addEventListener('input',function(e){
-  state.racks[state.wave]=normal(e.target.value).toUpperCase();e.target.value=state.racks[state.wave];
-  state.visible=6;save();showError('');renderLetters();renderSuggestions();
+get('undo').addEventListener('click',function(){var s=state.racks[state.wave];if(s){state.racks[state.wave]=s.slice(0,-1);state.visible=3;save();renderQuick()}});
+get('clear').addEventListener('click',function(){state.racks[state.wave]='';state.visible=3;save();renderQuick()});
+get('more').addEventListener('click',function(){state.visible+=6;save();renderQuick()});
+get('back').addEventListener('click',function(){
+ if(state.wave===0)return;
+ state.wave--;state.finished=false;state.visible=3;setError('');save();render();
 });
-$('clear-rack').onclick=function(){
-  state.racks[state.wave]='';$('rack').value='';state.visible=6;save();showError('');renderLetters();renderSuggestions();$('rack').focus();
-};
-$('undo-letter').onclick=function(){
-  var rack=state.racks[state.wave];
-  if(!rack)return;
-  state.racks[state.wave]=rack.slice(0,-1);
-  $('rack').value=state.racks[state.wave];
-  state.visible=6;save();showError('');renderLetters();renderSuggestions();
-};
-$('played-word').addEventListener('input',function(e){e.target.value=normal(e.target.value).toUpperCase();showError('')});
-$('played-word').addEventListener('keydown',function(e){if(e.key==='Enter'){e.preventDefault();$('record-word').click()}});
-$('record-word').onclick=function(){advanceWithWord($('played-word').value,'played')};
-$('show-more').onclick=function(){state.visible+=18;save();renderSuggestions()};
-$('back').onclick=function(){if(state.wave===0)return;state.wave--;state.finished=false;state.visible=6;showError('');save();render();window.scrollTo({top:0,behavior:'smooth'})};
-$('restart').onclick=function(){if(!confirm('Restart your level 4 badge attempt? This clears all recorded words and letters.'))return;state=JSON.parse(JSON.stringify(defaults));showError('');save();render()};
-'ABCDEFGHIJKLMNOPQRSTUVWXYZ'.split('').forEach(function(ch){
-  var b=document.createElement('button');b.type='button';b.textContent=ch;
-  b.onclick=function(){
-    if(new Set(normal(state.racks[state.wave])).has(normal(ch)))return;
-    state.racks[state.wave]+=ch;$('rack').value=state.racks[state.wave];
-    state.visible=6;showError('');save();renderLetters();renderSuggestions()
-  };
-  $('keypad').appendChild(b);
+get('form').addEventListener('submit',function(e){e.preventDefault();record(get('played').value,'typed')});
+get('reset').addEventListener('click',function(){
+ if(!confirm('Restart the three-round badge attempt?'))return;
+ state={wave:0,racks:['','',''],words:['','',''],finished:false,visible:3};save();get('manual').open=false;setError('');render()
 });
 render();
 if('serviceWorker' in navigator&&location.protocol.startsWith('http'))window.addEventListener('load',function(){navigator.serviceWorker.register('./sw.js').catch(function(){})});
