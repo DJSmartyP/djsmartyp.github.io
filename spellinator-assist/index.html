@@ -56,7 +56,7 @@ details summary{cursor:pointer;color:#ff9ed3;font-weight:750;font-size:.83rem;pa
 <p class="hint">Only words made from THESE letters are suggested. Previously used letters cannot appear in any new word.</p>
 <div class="row"><span class="panel-title" style="margin:3px 0">Displayed letters</span><div class="row"><button id="undo-letter" class="smallbutton" type="button">Undo last</button><button id="clear-rack" class="smallbutton" type="button">Clear</button></div></div>
 <div id="letter-tiles" class="letters empty"></div>
-<details open><summary>Tap available letters (used keys disappear)</summary><div class="keypad" id="keypad"></div></details>
+<details open><summary>Tap visible letters (tapped keys disappear)</summary><div class="keypad" id="keypad"></div></details>
 </div>
 <div id="played-mode" hidden>
 <label class="biglabel" for="played-word">What word did you successfully use?</label>
@@ -213,8 +213,8 @@ function renderLetters(){
   refreshKeypad();
 }
 function refreshKeypad(){
-  // A letter is one-use-only in the tap keyboard, and prior-round letters cannot be selected.
-  var hidden=new Set(normal(state.racks[state.wave])+usedBefore(state.wave));
+  // Only letters already tapped this round disappear. Prior-round letters may still be entered as visible wall tiles, but are excluded from words.
+  var hidden=new Set(normal(state.racks[state.wave]));
   Array.from($('keypad').children).forEach(function(button){
     var unavailable=hidden.has(normal(button.textContent));
     button.hidden=unavailable;button.disabled=unavailable;
@@ -296,7 +296,7 @@ $('restart').onclick=function(){if(!confirm('Restart your level 4 badge attempt?
 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'.split('').forEach(function(ch){
   var b=document.createElement('button');b.type='button';b.textContent=ch;
   b.onclick=function(){
-    if(new Set(normal(state.racks[state.wave])+usedBefore(state.wave)).has(normal(ch)))return;
+    if(new Set(normal(state.racks[state.wave])).has(normal(ch)))return;
     state.racks[state.wave]+=ch;$('rack').value=state.racks[state.wave];
     state.visible=24;showError('');save();renderLetters();renderSuggestions()
   };
