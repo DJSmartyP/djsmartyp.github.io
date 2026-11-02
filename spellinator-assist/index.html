@@ -51,7 +51,7 @@ main{max-width:530px;margin:auto;padding:9px 10px calc(18px + env(safe-area-inse
 .title-row{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:5px}
 .title-row strong{color:#d9f7ff;font-size:.89rem}
 .title-row span{color:#acbfd4;font-size:.7rem}
-.recs{display:grid;gap:5px}
+.recs{display:grid;gap:5px}.recrow{display:grid;grid-template-columns:minmax(0,1fr) 39px;gap:5px;align-items:stretch}.recrow .rec{min-width:0}.reject{border:1px solid #835661;background:#352639;color:#ffd2d8;font-size:1.12rem;font-weight:950;border-radius:9px;min-width:39px;min-height:44px}.reject:active{background:#6a3345}.reset-reject{width:100%;border:0;background:transparent;color:#b4c8df;font-size:.71rem;min-height:28px;text-align:center;text-decoration:underline}
 .rec{display:grid;grid-template-columns:1fr auto auto;align-items:center;gap:6px;width:100%;min-height:44px;text-align:left;padding:5px 8px;border:1px solid #506783;border-radius:9px;background:#202e49;color:#f6faff}
 .rec.best{border-color:#57dfae;background:#183a3c}
 .rec .word{font-size:1.29rem;font-weight:950;letter-spacing:.055em;line-height:1}
@@ -104,7 +104,7 @@ footer{margin-bottom:2px}
 <section class="answers" id="answers">
 <div class="title-row"><strong>BEST WORDS · TAP AFTER PLAYING</strong><span id="matchcount"></span></div>
 <div class="recs" id="suggestions"></div>
-<button id="more" type="button" class="extra" hidden>More word options</button>
+<button id="more" type="button" class="extra" hidden>More word options</button><button id="reset-rejected" type="button" class="reset-reject" hidden>Restore rejected words</button>
 </section>
 <div class="overlay" id="manual-backdrop" hidden>
 <section class="dialog" role="dialog" aria-modal="true" aria-labelledby="dialog-title">
@@ -120,7 +120,7 @@ footer{margin-bottom:2px}
 <div class="error" id="error" role="alert" hidden></div>
 <div class="finish" id="finish" hidden></div>
 <div class="bottom"><span class="note">Tap a suggested word AFTER playing it. No confirmation screen.</span><div class="bottom-buttons"><button type="button" id="back">← Back</button><button type="button" id="reset">↻ Reset</button></div></div>
-<footer>Unofficial helper · Activate's accepted-word list is not available. Recommendations favour familiar words, saving vowels early and leaving future possibilities. Players report the wall letters change between rounds.</footer>
+<footer>Unofficial helper · Activate's accepted-word list is not available. Suggestions prioritise recognisable words confirmed in a general dictionary. The X hides words Activate rejects. Players report the wall letters change between rounds.</footer>
 </main>
 <script src="./words.js"></script>
 <script>
@@ -148,7 +148,10 @@ try{
 // Avoid obvious proper nouns, profanity and unreliable quick-pick suggestions.
 var avoid=new Set('fuck shit cunt piss porn rape sexy slut tits dick cock anal arse july june april march monday friday sunday tuesday google yahoo jesus satan israel london paris china japan india africa walmart blvd govt dept intl ltds http html https mysql json jpeg pdfs secs mins mins asap fyi btw wtf xbox'.split(' '));
 var words=(window.SPELL_WORDS||[]).filter(function(p){return /^[a-z]{4,6}$/.test(p[0])&&unique(p[0])&&!avoid.has(p[0])})
- .map(function(p){return {word:p[0],freq:Number(p[1])||1,mask:usedMask(p[0]),len:p[0].length}});
+ .map(function(p){return {word:p[0],freq:Number(p[1])||1,tier:Number(p[2])||2,mask:usedMask(p[0]),len:p[0].length}});
+var REJECTED_KEY='djsmarty-spellinator-rejected-v1',rejected=new Set();
+try{var rejectedSaved=JSON.parse(localStorage.getItem(REJECTED_KEY)||'[]');if(Array.isArray(rejectedSaved))rejectedSaved.forEach(function(w){if(/^[a-z]{4,6}$/.test(w))rejected.add(w)})}catch(ignore){}
+function rejectWord(word){rejected.add(word);try{localStorage.setItem(REJECTED_KEY,JSON.stringify(Array.from(rejected)))}catch(ignore){}renderQuick()}
 var futureWords=words.filter(function(x){return x.len===5||x.len===6});
 function validate(word,wave,needRack){
  word=normal(word);
@@ -163,22 +166,31 @@ var rankingCache={};
 function rankedFor(wave,prior){
  var key=wave+'|'+prior;if(rankingCache[key])return rankingCache[key];
  var target=required(wave),current=words.filter(function(e){return e.len===target&&!(e.mask&prior)});
- if(wave===2){rankingCache[key]=current.map(function(e){return {word:e.word,vowels:(e.word.match(/[aeiou]/g)||[]).length,score:e.freq,freq:e.freq,mask:e.mask}}).sort(function(a,b){return b.score-a.score||a.word.localeCompare(b.word)});return rankingCache[key]}
- var nextLen=target+1,future=words.filter(function(e){return e.len===nextLen&&!(e.mask&prior)&&e.freq>=12000});
- var options=future.map(function(e){return {mask:e.mask,weight:Math.pow(e.freq/20000,2)}});
+ var nextLen=target+1;
+ var future=wave<2?words.filter(function(e){return e.len===nextLen&&e.tier===1&&e.freq>=32000&&!(e.mask&prior)}):[];
+ var totalFuture=0,futureWeights=[];
+ for(var j=0;j<future.length;j++){var weight=Math.pow(future[j].freq/50000,3);futureWeights.push(weight);totalFuture+=weight}
  rankingCache[key]=current.map(function(e){
-  var vowels=(e.word.match(/[aeiou]/g)||[]).length,possible=0,weight=0;
-  for(var i=0;i<options.length;i++)if(!(options[i].mask&e.mask)){possible++;weight+=options[i].weight}
-  var familiar=Math.max(0,Math.min(1,(e.freq-9500)/10500));
-  var score=40*Math.log1p(weight)+28*familiar-(wave===0?6:3)*vowels-(e.freq<12000?25:0)-(vowels===0&&!e.word.includes('y')?35:0);
-  return {word:e.word,vowels:vowels,score:score,freq:e.freq,mask:e.mask,options:possible};
+  var vowels=(e.word.match(/[aeiou]/g)||[]).length;
+  var familiarity=Math.pow(Math.min(1,e.freq/50000),4);
+  var futureRatio=0,remaining=0;
+  if(wave<2&&totalFuture){
+   for(var k=0;k<future.length;k++)if(!(e.mask&future[k].mask))remaining+=futureWeights[k];
+   futureRatio=remaining/totalFuture;
+  }
+  // Primary goal: an easily recognised, dictionary-supported word.
+  // Secondary goal: conserve likely playable words for unknown future racks.
+  var score=150*familiarity+55*(e.tier===1?1:0)+36*futureRatio-(wave<2?4:0)*vowels;
+  if(e.freq<19000)score-=35;
+  if(vowels===0&&!e.word.includes('y'))score-=40;
+  return {word:e.word,vowels:vowels,score:score,freq:e.freq,tier:e.tier,mask:e.mask};
  }).sort(function(a,b){return b.score-a.score||b.freq-a.freq||a.word.localeCompare(b.word)});
  return rankingCache[key];
 }
 function rank(){
  var rack=normal(state.racks[state.wave]),prior=usedMask(before(state.wave));if(!rack)return [];
  var available=usedMask(rack);
- return rankedFor(state.wave,prior).filter(function(e){return (e.mask&available)===e.mask});
+ return rankedFor(state.wave,prior).filter(function(e){return !rejected.has(e.word)&&(e.mask&available)===e.mask});
 }
 function setError(message){
  get('error').hidden=!message;get('error').textContent=message||'';
@@ -235,15 +247,23 @@ function renderQuick(){
   empty.textContent='No safe '+required(state.wave)+'-letter words yet. Tap more wall letters; orange-marked letters do not count for the badge.';
   area.appendChild(empty);
  }else matches.slice(0,state.visible).forEach(function(e,i){
+  var row=document.createElement('div');row.className='recrow';
   var b=document.createElement('button');b.type='button';b.className='rec'+(i===0?' best':'');
   var word=document.createElement('span');word.className='word';word.textContent=e.word.toUpperCase();
-  var cost=document.createElement('span');cost.className='cost';cost.textContent=state.wave===2?'Final':e.vowels+' vowel'+(e.vowels===1?'':'s')+' · '+e.options+' next';
+  var cost=document.createElement('span');cost.className='cost';
+  cost.textContent=(e.tier===1&&e.freq>=40000?'COMMON':e.tier===1?'DICTIONARY':'EXTRA');
   var go=document.createElement('span');go.className='go';go.textContent='USED ✓';
   b.append(word,cost,go);b.setAttribute('aria-label','Record '+e.word+' as successfully played and advance');
-  b.addEventListener('click',function(){record(e.word,'selection')});area.appendChild(b)
+  b.addEventListener('click',function(){record(e.word,'selection')});
+  var dismiss=document.createElement('button');dismiss.type='button';dismiss.className='reject';
+  dismiss.textContent='✕';dismiss.title='Activate rejected this word';
+  dismiss.setAttribute('aria-label','Activate rejected '+e.word+'; hide it from future suggestions');
+  dismiss.addEventListener('click',function(){rejectWord(e.word)});
+  row.append(b,dismiss);area.appendChild(row);
  });
  get('more').hidden=matches.length<=state.visible;
  get('more').textContent='More options · '+Math.max(0,matches.length-state.visible)+' remaining';
+ get('reset-rejected').hidden=rejected.size===0;
 }
 function render(){
  var wave=state.wave,finished=state.finished;
@@ -278,6 +298,7 @@ function render(){
 get('undo').addEventListener('click',function(){var s=state.racks[state.wave];if(s){state.racks[state.wave]=s.slice(0,-1);state.visible=3;setError('');save();renderQuick()}});
 get('clear').addEventListener('click',function(){state.racks[state.wave]='';state.visible=3;setError('');save();renderQuick()});
 get('more').addEventListener('click',function(){state.visible+=6;save();renderQuick()});
+get('reset-rejected').addEventListener('click',function(){rejected.clear();try{localStorage.removeItem(REJECTED_KEY)}catch(ignore){}renderQuick()});
 get('back').addEventListener('click',function(){
  if(state.wave===0)return;
  state.wave--;state.finished=false;state.visible=3;setError('');save();render();
