@@ -55,7 +55,7 @@ main{max-width:530px;margin:auto;padding:9px 10px calc(18px + env(safe-area-inse
 .rec{display:grid;grid-template-columns:minmax(0,1fr) auto;grid-template-rows:auto auto;align-items:center;gap:3px 8px;width:100%;min-height:69px;text-align:left;padding:10px 12px;border:1px solid #506783;border-radius:12px;background:#202e49;color:#f6faff}
 .rec.best{border-color:#57dfae;background:#183a3c}
 .rec .word{font-size:clamp(1.55rem,6vw,2.05rem);font-weight:950;letter-spacing:.065em;line-height:1.05;grid-column:1;grid-row:1}
-.rec .cost{font-size:.78rem;color:#a9e9c7;font-weight:800;grid-column:1;grid-row:2}
+.rec .cost{font-size:.78rem;color:#a9e9c7;font-weight:800;grid-column:1;grid-row:2}.rec.strategy .cost{color:#ffd59b}
 .rec .go{font-size:.78rem;border-radius:8px;background:#2e9773;padding:13px 9px;color:white;font-weight:950;white-space:nowrap;grid-column:2;grid-row:1 / 3}
 .rec:not(.best) .go{background:#385f83}
 .rec:active{transform:scale(.99);background:#2b435a}
@@ -130,7 +130,7 @@ footer{margin-bottom:2px}
 <div class="error" id="error" role="alert" hidden></div>
 <div class="finish" id="finish" hidden></div>
 <div class="bottom"><span class="note">Tap a suggested word AFTER playing it. No confirmation screen.</span><div class="bottom-buttons"><button type="button" id="back">← Back</button><button type="button" id="reset">↻ Reset</button></div></div>
-<footer>Unofficial helper · Activate's accepted-word list is not available. Suggestions favour everyday words. Record an accepted word to advance and improve suggestions. Tap ✕ to hide a rejected word for future attempts. Players report the wall letters change between rounds.</footer>
+<footer>Unofficial helper · No official Activate word list. Includes badge-guide strategic options, such as JYNX, which are not confirmed accepted. Record accepted words and reject failed ones to improve future suggestions.</footer>
 </main>
 <script src="./words.js"></script>
 <script>
@@ -197,27 +197,46 @@ var rankingCache={};
 function rankedFor(wave,prior){
  var key=wave+'|'+prior;if(rankingCache[key])return rankingCache[key];
  var target=required(wave),current=words.filter(function(e){return e.len===target&&!(e.mask&prior)});
- var nextLen=target+1;
- var future=wave<2?words.filter(function(e){return e.len===nextLen&&e.tier===1&&e.freq>=32000&&!(e.mask&prior)}):[];
+ // Unknown future walls: preserve a diverse pool of familiar five- and six-letter words.
+ // Round 1 considers BOTH later word lengths; round 2 focuses on the final six-letter word.
+ var future=wave<2?words.filter(function(e){
+  return e.tier===1&&e.freq>=27000&&!(e.mask&prior)&&
+   (e.len===nextLength(wave)||(wave===0&&e.len===6));
+ }):[];
  var totalFuture=0,futureWeights=[];
- for(var j=0;j<future.length;j++){var weight=Math.pow(future[j].freq/50000,3);futureWeights.push(weight);totalFuture+=weight}
+ for(var j=0;j<future.length;j++){
+  var weight=Math.pow(future[j].freq/50000,2)*(future[j].len===6&&wave===0?0.65:1);
+  futureWeights.push(weight);totalFuture+=weight;
+ }
  rankingCache[key]=current.map(function(e){
   var vowels=(e.word.match(/[aeiou]/g)||[]).length;
-  var familiarity=Math.pow(Math.min(1,e.freq/50000),4);
+  var hasY=e.word.indexOf('y')>=0;
+  var rare=(e.word.match(/[jqxz]/g)||[]).length;
+  var familiarity=Math.pow(Math.min(1,e.freq/50000),2);
   var futureRatio=0,remaining=0;
   if(wave<2&&totalFuture){
    for(var k=0;k<future.length;k++)if(!(e.mask&future[k].mask))remaining+=futureWeights[k];
    futureRatio=remaining/totalFuture;
   }
-  // Primary goal: an easily recognised, dictionary-supported word.
-  // Secondary goal: conserve likely playable words for unknown future racks.
-  var score=150*familiarity+55*(e.tier===1?1:0)+36*futureRatio-(wave<2?4:0)*vowels;
-  if(e.freq<19000)score-=35;
-  if(vowels===0&&!e.word.includes('y'))score-=40;
-  return {word:e.word,vowels:vowels,score:score,freq:e.freq,tier:e.tier,mask:e.mask};
+  // A common word is useful, but preserving vowels and hard consonants is
+  // unusually important for three DIFFERENT words with no reused letters.
+  // This is a heuristic for unknown wall letters, not a probability or guaranteed solution.
+  var score=90*familiarity+35*(e.tier===1?1:0)+110*futureRatio;
+  if(wave<2){
+   score-=(wave===0?22:14)*vowels;
+   score+=(wave===0?13:7)*rare;
+  }
+  if(e.freq<19000)score-=25;
+  if(vowels===0&&!hasY)score-=32;
+  // Badge guide specifically identifies JYNX as a useful no-vowel opening word.
+  // Its absence from our US-oriented source dictionary previously hid it entirely.
+  // Do not call it officially accepted until confirmed by the player.
+  if(wave===0&&e.word==='jynx')score+=270;
+  return {word:e.word,vowels:vowels,score:score,freq:e.freq,tier:e.tier,mask:e.mask,strategyTip:wave===0&&e.word==='jynx'};
  }).sort(function(a,b){return b.score-a.score||b.freq-a.freq||a.word.localeCompare(b.word)});
  return rankingCache[key];
 }
+function nextLength(wave){return required(wave)+1}
 function rank(){
  var rack=normal(state.racks[state.wave]),prior=usedMask(before(state.wave));if(!rack)return [];
  var available=usedMask(rack);
@@ -294,7 +313,7 @@ function renderSuggestions(){
  var rack=state.racks[state.wave],matches=rank(),area=get('suggestions');
  get('wall-summary').textContent=rack.length+' wall letters · '+before(state.wave).length+' previously played';
  get('results-title').textContent=state.wave===2?'6-LETTER ANSWERS':'BEST '+required(state.wave)+'-LETTER WORDS';
- get('results-hint').textContent=state.wave===2?'Final round: all matching six-letter candidates are available. Tap ✓ when accepted, or ✕ to hide a rejected word.':'Recommended words first: common vocabulary and future flexibility. Tap ✓ only after Activate accepts the word; ✕ hides rejected words.';
+ get('results-hint').textContent=state.wave===2?'Final round: all matching six-letter candidates are available. Tap ✓ when accepted, or ✕ to hide a rejected word.':state.wave===0&&matches.some(function(e){return e.word==='jynx'})?'Badge guide tip: JYNX saves every A/E/I/O/U vowel. UK-valid word, but Activate acceptance is unconfirmed. Tap ✕ if rejected.':'Recommendations balance word familiarity with conserving vowels and future word choices. Tap ✓ only after Activate accepts a word; ✕ hides rejected words.';
  area.replaceChildren();
  get('matchcount').textContent=rack?matches.length+' options':'';
  if(!rack||rack.length<required(state.wave)){
@@ -307,10 +326,10 @@ function renderSuggestions(){
   area.appendChild(empty);
  }else matches.slice(0,state.wave===2?matches.length:state.visible).forEach(function(e,i){
   var row=document.createElement('div');row.className='recrow';
-  var b=document.createElement('button');b.type='button';b.className='rec'+(i===0?' best':'');
+  var b=document.createElement('button');b.type='button';b.className='rec'+(i===0?' best':'')+(e.strategyTip?' strategy':'');
   var word=document.createElement('span');word.className='word';word.textContent=e.word.toUpperCase();
   var cost=document.createElement('span');cost.className='cost';
-  cost.textContent=accepted.has(e.word)?'ACCEPTED ✓':(e.tier===1&&e.freq>=40000?'COMMON':e.tier===1?'DICTIONARY':'EXTRA');
+  cost.textContent=accepted.has(e.word)?'ACCEPTED ✓':e.strategyTip?'BADGE GUIDE TIP':(e.tier===1&&e.freq>=40000?'COMMON':e.tier===1?'DICTIONARY':'EXTRA');
   var go=document.createElement('span');go.className='go';go.textContent='✓ USED';
   b.append(word,cost,go);b.setAttribute('aria-label','Record '+e.word+' as successfully played and advance');
   b.addEventListener('click',function(){record(e.word,'selection')});
