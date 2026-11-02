@@ -11,14 +11,25 @@ This is a phone-friendly helper for the 60-second Level 4 badge, focused only on
 
 A July 2026 player discussion reports that letters change between rounds; new letters can appear. One player's recollection is about **15 available letters, 4 vowels and 11 consonants** (Y counted as a consonant). That quantity has **not** been independently verified for Watford. The assistant doesn't enforce it.
 
-## Fast controls
-- The alphabet keypad has **26 fixed positions**. Tapped letters grey out in place; tap again to unselect, or use Undo/Clear.
-- Previously played letters can still be tapped if they appear on the current wall, but are orange-marked and excluded from suggested answers.
-- The **three strongest suggestions** appear directly below the keypad. They use only the current wall letters and don't repeat letters played earlier.
-- Tap a suggestion **only once the game accepts your word**: this records the used letters and advances to the next round automatically.
-- If you already played a word, use **Played a word** at the top to record it directly without entering the wall letters.
-- Go Back to correct a recorded word. If it changes, later words are cleared.
-- Progress is saved on the device.
+## The two-screen flow (v16)
+
+This is now designed around **word selection**, not fast letter entry. Each round has two large, separate screens:
+
+**1. Enter the wall letters**
+- Tap the fixed A–Z alphabet, selecting the 16 letters displayed on the wall. The last key does **not** move: it greys out in place. Tap it again or use Undo to correct a mistake.
+- After the 16th letter, the app **automatically opens the word list**.
+- If the room gives a different number of letters, press **SEE POSSIBLE WORDS** after enough letters are entered. The app never enforces 16 as an absolute requirement.
+- A previously used letter can still be entered if shown on the current wall, but cannot appear in a recommended word.
+
+**2. Find a word (larger text)**
+- Show **10 large word candidates** initially in rounds 1 and 2, prioritising familiarity and future word flexibility. Press **More options** for 10 more.
+- In round 3, **show every matching 6-letter candidate** in the list, sorted by confidence (scroll if necessary).
+- Tap **✓ USED** only after the game accepts that word, to lock its letters and move straight to the next round's blank alphabet.
+- If Activate rejects a word, tap the separate **✕** on its row to hide it from all later suggestions (and future attempts on this device).
+- **← Edit letters** takes you back to the alphabet without resetting the current attempt.
+- **✓ Played a word** at the top remains a direct alternative: type an accepted word and advance without entering the wall letters.
+
+The app remembers your current round and the screen you reached. It can also return to prior rounds for corrections. Replacing an earlier recorded word clears all later words to keep letter lockouts correct.
 
 ## Ranking
 Rounds 1 and 2 favour familiar candidates that save vowels and preserve potential dictionary words for the next round. Future tiles are unknown, so this is a heuristic, not a guarantee. Round 3 prioritises familiar six-letter words.
@@ -48,4 +59,4 @@ If the game rejects a suggestion, press the **✕** beside it. It is hidden in f
 
 Neither source publishes Activate's accepted-word dictionary. **No candidate is guaranteed to work** until you've played it in the room.
 
-Offline cache: `djsmarty-one-and-done-v15`.
+Offline cache: `djsmarty-one-and-done-v16`.
