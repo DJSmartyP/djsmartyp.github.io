@@ -103,10 +103,10 @@ footer{margin-bottom:2px}
 <section class="panel" id="entry">
 <div class="head"><strong id="entry-title">Tap letters you can see</strong><div class="tools"><button type="button" id="undo">↶ Undo</button><button type="button" id="clear">Clear</button></div></div>
 <div class="rack" id="rack" aria-live="polite"></div>
-<div class="rack-stats" aria-live="polite" aria-atomic="true"><div class="letter-count"><strong id="letter-count">0</strong><span>Tiles entered</span></div><div class="letter-meta"><strong id="letter-breakdown">0 vowels · 0 consonants · 0 distinct · 0 unused</strong><small>About 16 tiles per round, including repeats. Tap once for each tile; press ENTER when ready.</small></div></div>
+<div class="rack-stats" aria-live="polite" aria-atomic="true"><div class="letter-count"><strong id="letter-count">0</strong><span>Letters entered</span></div><div class="letter-meta"><strong id="letter-breakdown">0 vowels · 0 consonants · 0 usable</strong><small>Player-reported mix: 4 vowels + 11 consonants (Y counts as consonant); unconfirmed. Press ENTER when ready.</small></div></div>
 <div class="keyboard" id="keyboard" role="group" aria-label="Alphabet letter buttons"></div>
 
-<div class="micro" id="keyboard-note">Tap a letter again if it appears twice (×2, ×3…). Keys stay fixed. Undo removes the last tile; tap a tile above to remove it. Orange dot = used in an earlier word, so it cannot be played again.</div>
+<div class="micro" id="keyboard-note">One tap per letter on this round's wall. Tap again to deselect. Orange-marked letters may appear on the wall again, but cannot be used in another played word.</div>
 <button id="see-words" type="button" class="entry-action">ENTER — SHOW WORDS →</button>
 </section>
 <section class="answers" id="answers" hidden>
@@ -149,8 +149,9 @@ try{
  var raw=JSON.parse(localStorage.getItem(STORE)||'null');
  if(raw&&Array.isArray(raw.words)&&raw.words.length===3&&Array.isArray(raw.racks)&&raw.racks.length===3){
   state.words=raw.words.map(normal);
-  // Preserve duplicates: one entry represents one physical wall tile.
-  state.racks=raw.racks.map(function(s){return normal(s).toUpperCase().slice(0,52)});
+  // Earlier versions allowed repeated letters within a round. Normalise existing saves
+  // without losing earlier played words: wall letters are unique per round.
+  state.racks=raw.racks.map(function(s){return Array.from(new Set(normal(s).toUpperCase())).join('')});
   state.wave=Math.min(2,Math.max(0,Number(raw.wave)||0));
   state.finished=!!raw.finished;
   state.view=raw.view==='results'?'results':'entry';
@@ -242,10 +243,11 @@ function record(word,source){
 }
 function toggle(letter){
  if(state.finished)return;
- // Each press represents another physical wall tile, even if the same letter appears twice.
- var s=state.racks[state.wave];
- if(s.length>=52)return; // guard against accidental runaway taps; 16 is expected, not enforced.
- state.racks[state.wave]=s+letter;
+ // Each letter appears at most once on a given wall. Tapping a selected letter
+ // deselects it, without moving or removing the key from the alphabet.
+ // The letter can still appear on a new round's wall even when played earlier.
+ var s=state.racks[state.wave],index=s.indexOf(letter);
+ state.racks[state.wave]=index<0?s+letter:s.slice(0,index)+s.slice(index+1);
  state.visible=10;setError('');save();renderQuick();
 }
 function removeTile(index){
@@ -263,11 +265,10 @@ function renderQuick(){
  var rack=state.racks[state.wave],prior=new Set(before(state.wave).toUpperCase());
  var vowelCount=Array.from(rack).filter(function(ch){return 'AEIOU'.includes(ch)}).length;
  var consonantCount=rack.length-vowelCount;
- var counts={};for(var j=0;j<rack.length;j++)counts[rack[j]]=(counts[rack[j]]||0)+1;
- var distinct=Object.keys(counts);
- var unusedDistinct=distinct.filter(function(ch){return !prior.has(ch)}).length;
+ var distinct=new Set(rack);
+ var unusedDistinct=Array.from(distinct).filter(function(ch){return !prior.has(ch)}).length;
  get('letter-count').textContent=String(rack.length);
- get('letter-breakdown').textContent=vowelCount+' vowels · '+consonantCount+' consonants · '+distinct.length+' distinct · '+unusedDistinct+' unused';
+ get('letter-breakdown').textContent=vowelCount+' vowel'+(vowelCount===1?'':'s')+' · '+consonantCount+' consonant'+(consonantCount===1?'':'s')+' · '+unusedDistinct+' usable';
  var display=get('rack');display.replaceChildren();
  for(var i=0;i<rack.length;i++){
   var chip=document.createElement('button');chip.type='button';
@@ -279,11 +280,11 @@ function renderQuick(){
   display.appendChild(chip);
  }
  for(var i=0;i<26;i++){
-  var btn=get('keyboard').children[i],letter=alphabet[i],count=counts[letter]||0,selected=count>0,spent=prior.has(letter);
+  var btn=get('keyboard').children[i],letter=alphabet[i],selected=distinct.has(letter),spent=prior.has(letter);
   btn.classList.toggle('selected',selected);btn.classList.toggle('spent',spent);
   btn.setAttribute('aria-pressed',String(selected));
-  btn.setAttribute('data-count',selected?(count>1?'×'+count:'✓'):'');
-  btn.setAttribute('aria-label',letter+(count?' entered '+count+' time'+(count===1?'':'s'):'')+(spent?' (previously used; cannot be played)':'')+'. Tap to add another tile.');
+  btn.setAttribute('data-count',selected?'✓':'');
+  btn.setAttribute('aria-label',letter+(selected?' selected; tap to remove':' not selected; tap to enter')+(spent?' (used in an earlier word; cannot be played again)':''));
  }
  get('undo').disabled=!rack;get('clear').disabled=!rack;
  get('see-words').disabled=unusedDistinct<required(state.wave);
@@ -291,7 +292,7 @@ function renderQuick(){
 }
 function renderSuggestions(){
  var rack=state.racks[state.wave],matches=rank(),area=get('suggestions');
- get('wall-summary').textContent=rack.length+' wall letters · '+before(state.wave).length+' already used';
+ get('wall-summary').textContent=rack.length+' wall letters · '+before(state.wave).length+' previously played';
  get('results-title').textContent=state.wave===2?'6-LETTER ANSWERS':'BEST '+required(state.wave)+'-LETTER WORDS';
  get('results-hint').textContent=state.wave===2?'Final round: all matching six-letter candidates are available. Tap ✓ when accepted, or ✕ to hide a rejected word.':'Recommended words first: common vocabulary and future flexibility. Tap ✓ only after Activate accepts the word; ✕ hides rejected words.';
  area.replaceChildren();
@@ -341,7 +342,7 @@ function render(){
  get('answers').hidden=finished||state.view!=='results';
  get('manual-open').disabled=finished;
  get('entry-title').textContent='Tap new wall letters for Round '+(wave+1);
- get('keyboard-note').textContent='Tap once per physical tile (A twice if you see two As). ×2 shows duplicates. Undo or tap an entered tile to remove it. Orange dot = letter used earlier; it cannot be played again.';
+ get('keyboard-note').textContent='Letters appear once per round. Tap to select or deselect without moving the alphabet. Orange dot = letter already played in an earlier round: it can be entered from this wall but not used in an answer.';
  get('back').disabled=wave===0&&!finished;
  get('played').maxLength=required(wave);
  get('played').value=state.words[wave]?state.words[wave].toUpperCase():'';
