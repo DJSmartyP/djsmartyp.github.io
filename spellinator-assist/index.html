@@ -35,12 +35,12 @@ main{max-width:530px;margin:auto;padding:9px 10px calc(18px + env(safe-area-inse
 .tools{display:flex;gap:5px;flex-shrink:0}.tools button{padding:5px 9px;border-radius:8px;border:1px solid #56657c;background:#272f47;color:#e2ebfd;font-size:.73rem;font-weight:800}
 .rack{display:flex;align-items:center;flex-wrap:wrap;gap:4px;padding:6px 8px;min-height:36px;border:1px solid #4e607a;border-radius:9px;background:#0d1426;margin-bottom:7px}
 .rack:empty:before{content:"Tap the letters visible in the room";color:#97a5bf;font-size:.83rem}
-.letter{display:inline-flex;justify-content:center;align-items:center;min-width:24px;height:24px;padding:2px 4px;font-weight:900;border-radius:5px;background:#273d60;color:#eff9ff;border:1px solid #5484aa}
+.letter{display:inline-flex;justify-content:center;align-items:center;min-width:30px;height:30px;padding:2px 4px;font-weight:900;border-radius:6px;background:#273d60;color:#eff9ff;border:1px solid #5484aa;cursor:pointer;touch-action:manipulation}
 .letter.spent{border-color:#ba667a;background:#493345;color:#ffc7cc;text-decoration:line-through}
 .keyboard{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:5px}
 .key{height:42px;min-width:0;position:relative;background:#25334e;border:1px solid #58708c;color:#fff;border-radius:8px;font-size:1.05rem;font-weight:950;transition:background .06s ease}
 .key.selected{background:#3c4250;border-color:#4c5360;color:#8593a9}
-.key.selected:after{content:"✓";position:absolute;right:2px;top:0;font-size:.58rem;color:#a0abc0}
+.key.selected:after{content:attr(data-count);position:absolute;right:2px;top:1px;font-size:.66rem;color:#d6f5ed;font-weight:950}
 .key.spent{border-color:#a97954}
 .key.spent:not(.selected){color:#ffca93}
 .key.spent:before{content:"•";position:absolute;top:-2px;right:4px;color:#fbc18e}
@@ -103,10 +103,10 @@ footer{margin-bottom:2px}
 <section class="panel" id="entry">
 <div class="head"><strong id="entry-title">Tap letters you can see</strong><div class="tools"><button type="button" id="undo">↶ Undo</button><button type="button" id="clear">Clear</button></div></div>
 <div class="rack" id="rack" aria-live="polite"></div>
-<div class="rack-stats" aria-live="polite" aria-atomic="true"><div class="letter-count"><strong id="letter-count">0</strong><span>Letters entered</span></div><div class="letter-meta"><strong id="letter-breakdown">0 vowels · 0 consonants</strong><small>No fixed count. Enter all wall letters, then press ENTER.</small></div></div>
+<div class="rack-stats" aria-live="polite" aria-atomic="true"><div class="letter-count"><strong id="letter-count">0</strong><span>Tiles entered</span></div><div class="letter-meta"><strong id="letter-breakdown">0 vowels · 0 consonants · 0 distinct · 0 unused</strong><small>About 16 tiles per round, including repeats. Tap once for each tile; press ENTER when ready.</small></div></div>
 <div class="keyboard" id="keyboard" role="group" aria-label="Alphabet letter buttons"></div>
 
-<div class="micro" id="keyboard-note">Grey = selected this round. <span style="color:#ffbf88">Orange dot = used earlier</span> (still tappable, but excluded from words).</div>
+<div class="micro" id="keyboard-note">Tap a letter again if it appears twice (×2, ×3…). Keys stay fixed. Undo removes the last tile; tap a tile above to remove it. Orange dot = used in an earlier word, so it cannot be played again.</div>
 <button id="see-words" type="button" class="entry-action">ENTER — SHOW WORDS →</button>
 </section>
 <section class="answers" id="answers" hidden>
@@ -149,7 +149,8 @@ try{
  var raw=JSON.parse(localStorage.getItem(STORE)||'null');
  if(raw&&Array.isArray(raw.words)&&raw.words.length===3&&Array.isArray(raw.racks)&&raw.racks.length===3){
   state.words=raw.words.map(normal);
-  state.racks=raw.racks.map(function(s){return Array.from(new Set(normal(s))).join('').toUpperCase()});
+  // Preserve duplicates: one entry represents one physical wall tile.
+  state.racks=raw.racks.map(function(s){return normal(s).toUpperCase().slice(0,52)});
   state.wave=Math.min(2,Math.max(0,Number(raw.wave)||0));
   state.finished=!!raw.finished;
   state.view=raw.view==='results'?'results':'entry';
@@ -241,10 +242,16 @@ function record(word,source){
 }
 function toggle(letter){
  if(state.finished)return;
- var s=state.racks[state.wave],ix=s.indexOf(letter);
- state.racks[state.wave]=ix>=0?s.slice(0,ix)+s.slice(ix+1):s+letter;
+ // Each press represents another physical wall tile, even if the same letter appears twice.
+ var s=state.racks[state.wave];
+ if(s.length>=52)return; // guard against accidental runaway taps; 16 is expected, not enforced.
+ state.racks[state.wave]=s+letter;
  state.visible=10;setError('');save();renderQuick();
- 
+}
+function removeTile(index){
+ var rack=state.racks[state.wave];if(index<0||index>=rack.length)return;
+ state.racks[state.wave]=rack.slice(0,index)+rack.slice(index+1);
+ state.visible=10;setError('');save();renderQuick();
 }
 var alphabet='ABCDEFGHIJKLMNOPQRSTUVWXYZ';
 alphabet.split('').forEach(function(letter){
@@ -256,20 +263,30 @@ function renderQuick(){
  var rack=state.racks[state.wave],prior=new Set(before(state.wave).toUpperCase());
  var vowelCount=Array.from(rack).filter(function(ch){return 'AEIOU'.includes(ch)}).length;
  var consonantCount=rack.length-vowelCount;
+ var counts={};for(var j=0;j<rack.length;j++)counts[rack[j]]=(counts[rack[j]]||0)+1;
+ var distinct=Object.keys(counts);
+ var unusedDistinct=distinct.filter(function(ch){return !prior.has(ch)}).length;
  get('letter-count').textContent=String(rack.length);
- get('letter-breakdown').textContent=vowelCount+' vowel'+(vowelCount===1?'':'s')+' · '+consonantCount+' consonant'+(consonantCount===1?'':'s');
+ get('letter-breakdown').textContent=vowelCount+' vowels · '+consonantCount+' consonants · '+distinct.length+' distinct · '+unusedDistinct+' unused';
  var display=get('rack');display.replaceChildren();
  for(var i=0;i<rack.length;i++){
-  var chip=document.createElement('span');chip.className='letter'+(prior.has(rack[i])?' spent':'');chip.textContent=rack[i];display.appendChild(chip);
+  var chip=document.createElement('button');chip.type='button';
+  chip.className='letter'+(prior.has(rack[i])?' spent':'');
+  chip.textContent=rack[i];
+  chip.title='Tap to remove this '+rack[i]+' tile';
+  chip.setAttribute('aria-label','Remove '+rack[i]+' tile '+(i+1));
+  (function(index){chip.addEventListener('click',function(){removeTile(index)})})(i);
+  display.appendChild(chip);
  }
  for(var i=0;i<26;i++){
-  var btn=get('keyboard').children[i],letter=alphabet[i],selected=rack.indexOf(letter)>=0,spent=prior.has(letter);
+  var btn=get('keyboard').children[i],letter=alphabet[i],count=counts[letter]||0,selected=count>0,spent=prior.has(letter);
   btn.classList.toggle('selected',selected);btn.classList.toggle('spent',spent);
   btn.setAttribute('aria-pressed',String(selected));
-  btn.setAttribute('aria-label',letter+(selected?' selected - tap to remove':spent?' used earlier - can add to wall letters':' - tap to add'));
+  btn.setAttribute('data-count',selected?(count>1?'×'+count:'✓'):'');
+  btn.setAttribute('aria-label',letter+(count?' entered '+count+' time'+(count===1?'':'s'):'')+(spent?' (previously used; cannot be played)':'')+'. Tap to add another tile.');
  }
  get('undo').disabled=!rack;get('clear').disabled=!rack;
- get('see-words').disabled=rack.length<required(state.wave);
+ get('see-words').disabled=unusedDistinct<required(state.wave);
  get('see-words').textContent='ENTER — SHOW WORDS →';
 }
 function renderSuggestions(){
@@ -324,7 +341,7 @@ function render(){
  get('answers').hidden=finished||state.view!=='results';
  get('manual-open').disabled=finished;
  get('entry-title').textContent='Tap new wall letters for Round '+(wave+1);
- get('keyboard-note').textContent='Grey = selected; orange dot = used earlier and excluded from answers.';
+ get('keyboard-note').textContent='Tap once per physical tile (A twice if you see two As). ×2 shows duplicates. Undo or tap an entered tile to remove it. Orange dot = letter used earlier; it cannot be played again.';
  get('back').disabled=wave===0&&!finished;
  get('played').maxLength=required(wave);
  get('played').value=state.words[wave]?state.words[wave].toUpperCase():'';
