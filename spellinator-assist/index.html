@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#111225">
-<meta name="description" content="Fast one-screen Spellinator Level 4 One and Done badge helper. Fixed keyboard, 4/5/6-letter rounds, zero reused letters.">
+<meta name="description" content="One and Done Level 4: enter wall letters, see clear word suggestions, reject words Activate does not accept and advance through 4/5/6 letters.">
 <link rel="icon" href="./icon.svg" type="image/svg+xml">
 <link rel="manifest" href="./manifest.webmanifest">
 <title>One & Done 2.0 • DJ Smarty</title>
@@ -29,7 +29,7 @@ main{max-width:530px;margin:auto;padding:9px 10px calc(18px + env(safe-area-inse
 .statusline{display:flex;justify-content:space-between;align-items:center;gap:8px;min-height:21px;margin-bottom:5px}
 .roundname{font-size:.74rem;letter-spacing:.06em;font-weight:950;color:var(--cyan);text-transform:uppercase}
 .used{font-size:.68rem;color:#b9c8de;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.panel{border:1px solid #44516b;border-radius:13px;background:#171c2f;padding:9px 9px 8px;margin-bottom:9px}
+.panel{border:1px solid #44516b;border-radius:13px;background:#171c2f;padding:12px;margin-bottom:9px;min-height:66vh}
 .head{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:5px;min-height:25px}
 .head strong{font-size:.92rem;letter-spacing:.01em}
 .tools{display:flex;gap:5px;flex-shrink:0}.tools button{padding:5px 9px;border-radius:8px;border:1px solid #56657c;background:#272f47;color:#e2ebfd;font-size:.73rem;font-weight:800}
@@ -47,20 +47,20 @@ main{max-width:530px;margin:auto;padding:9px 10px calc(18px + env(safe-area-inse
 .key:active{transform:scale(.96)}
 .key-placeholder{visibility:hidden}
 .rack-stats{font-size:.73rem;color:#bcd7ef;line-height:1.25;margin:-2px 1px 7px;font-weight:800}.rack-stats b{color:#68e0b8}.micro{font-size:.69rem;color:#aebbd1;margin:6px 1px 0;line-height:1.2}
-.answers{border-radius:13px;background:#111d30;border:1px solid #2b526e;padding:9px;margin-bottom:8px}
+.answers{border-radius:13px;background:#111d30;border:1px solid #2b526e;padding:11px;margin-bottom:8px;min-height:65vh}
 .title-row{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:5px}
-.title-row strong{color:#d9f7ff;font-size:.89rem}
+.title-row strong{color:#d9f7ff;font-size:1.07rem}
 .title-row span{color:#acbfd4;font-size:.7rem}
-.recs{display:grid;gap:5px}.recrow{display:grid;grid-template-columns:minmax(0,1fr) 39px;gap:5px;align-items:stretch}.recrow .rec{min-width:0}.reject{border:1px solid #835661;background:#352639;color:#ffd2d8;font-size:1.12rem;font-weight:950;border-radius:9px;min-width:39px;min-height:44px}.reject:active{background:#6a3345}.reset-reject{width:100%;border:0;background:transparent;color:#b4c8df;font-size:.71rem;min-height:28px;text-align:center;text-decoration:underline}
-.rec{display:grid;grid-template-columns:1fr auto auto;align-items:center;gap:6px;width:100%;min-height:44px;text-align:left;padding:5px 8px;border:1px solid #506783;border-radius:9px;background:#202e49;color:#f6faff}
+.recs{display:grid;gap:8px}.recrow{display:grid;grid-template-columns:minmax(0,1fr) 51px;gap:7px;align-items:stretch}.recrow .rec{min-width:0}.reject{border:1px solid #835661;background:#352639;color:#ffd2d8;font-size:1.25rem;font-weight:950;border-radius:10px;min-width:51px;min-height:65px}.reject:active{background:#6a3345}.reset-reject{width:100%;border:0;background:transparent;color:#b4c8df;font-size:.71rem;min-height:28px;text-align:center;text-decoration:underline}
+.rec{display:grid;grid-template-columns:minmax(0,1fr) auto;grid-template-rows:auto auto;align-items:center;gap:3px 8px;width:100%;min-height:69px;text-align:left;padding:10px 12px;border:1px solid #506783;border-radius:12px;background:#202e49;color:#f6faff}
 .rec.best{border-color:#57dfae;background:#183a3c}
-.rec .word{font-size:1.29rem;font-weight:950;letter-spacing:.055em;line-height:1}
-.rec .cost{font-size:.7rem;color:#a9e9c7;font-weight:800;white-space:nowrap}
-.rec .go{font-size:.79rem;border-radius:6px;background:#2e9773;padding:7px 8px;color:white;font-weight:950;white-space:nowrap}
+.rec .word{font-size:clamp(1.55rem,6vw,2.05rem);font-weight:950;letter-spacing:.065em;line-height:1.05;grid-column:1;grid-row:1}
+.rec .cost{font-size:.78rem;color:#a9e9c7;font-weight:800;grid-column:1;grid-row:2}
+.rec .go{font-size:.78rem;border-radius:8px;background:#2e9773;padding:13px 9px;color:white;font-weight:950;white-space:nowrap;grid-column:2;grid-row:1 / 3}
 .rec:not(.best) .go{background:#385f83}
 .rec:active{transform:scale(.99);background:#2b435a}
 .empty{min-height:48px;display:flex;align-items:center;font-size:.84rem;color:#ced8ec;line-height:1.35;padding:6px}
-.extra{width:100%;margin-top:5px;background:#24334c;border:1px solid #466077;color:#d5e8f7;font-size:.77rem;font-weight:900;border-radius:7px;min-height:33px}
+.extra{width:100%;margin-top:9px;background:#24334c;border:1px solid #466077;color:#d5e8f7;font-size:.94rem;font-weight:900;border-radius:9px;min-height:48px}
 .manual{border:1px solid #394762;border-radius:11px;background:#171e30;margin-bottom:7px}
 .manual summary{list-style:none;display:flex;justify-content:space-between;align-items:center;padding:11px 12px;font-weight:900;color:#eee2f5;cursor:pointer;font-size:.82rem}
 .manual summary::-webkit-details-marker{display:none}
@@ -82,6 +82,13 @@ footer{font-size:.65rem;color:#8798ae;line-height:1.4;text-align:center;margin-t
 @media(max-width:360px){main{padding-left:7px;padding-right:7px}.key{height:39px}.rec{min-height:43px}.panel{padding:7px}.answers{padding:7px}.rack{padding:5px}.brand{font-size:20px}}
 @media(min-width:550px){main{padding-top:22px}.key{height:48px}.rec{min-height:50px}}
 
+.entry-action{display:block;width:100%;margin-top:12px;padding:13px 12px;min-height:54px;border:0;border-radius:12px;background:#68e7bd;color:#07281d;font-size:1.08rem;font-weight:1000}
+.entry-action:disabled{opacity:.45}
+.results-tools{display:flex;align-items:center;gap:7px;margin-bottom:11px}
+.edit-letters{font-size:.91rem;font-weight:900;border:1px solid #6187a1;background:#2a405a;color:#fff;border-radius:9px;min-height:43px;padding:8px 12px;white-space:nowrap}
+.wall-summary{flex:1;font-size:.75rem;color:#c7deef;min-width:0;text-align:right}
+.hint-note{font-size:.78rem;line-height:1.4;color:#c5d6ed;background:#222b42;padding:8px 10px;border-radius:9px;margin:7px 0 11px}
+@media(min-width:550px){.rec .word{font-size:2.15rem}}
 footer{margin-bottom:2px}
 </style>
 </head>
@@ -100,11 +107,14 @@ footer{margin-bottom:2px}
 <div class="keyboard" id="keyboard" role="group" aria-label="Alphabet letter buttons"></div>
 
 <div class="micro" id="keyboard-note">Grey = selected this round. <span style="color:#ffbf88">Orange dot = used earlier</span> (still tappable, but excluded from words).</div>
+<button id="see-words" type="button" class="entry-action">SHOW WORD OPTIONS →</button>
 </section>
-<section class="answers" id="answers">
-<div class="title-row"><strong>BEST WORDS · TAP AFTER PLAYING</strong><span id="matchcount"></span></div>
+<section class="answers" id="answers" hidden>
+<div class="results-tools"><button id="edit-letters" type="button" class="edit-letters">← Edit letters</button><span class="wall-summary" id="wall-summary">0 letters entered</span></div>
+<div class="title-row"><strong id="results-title">POSSIBLE WORDS</strong><span id="matchcount"></span></div>
+<div class="hint-note" id="results-hint">Tap USED only after playing a word successfully. Tap ✕ if Activate rejects it.</div>
 <div class="recs" id="suggestions"></div>
-<button id="more" type="button" class="extra" hidden>More word options</button><button id="reset-rejected" type="button" class="reset-reject" hidden>Restore rejected words</button>
+<button id="more" type="button" class="extra" hidden>Show more candidates</button><button id="reset-rejected" type="button" class="reset-reject" hidden>Restore rejected words</button>
 </section>
 <div class="overlay" id="manual-backdrop" hidden>
 <section class="dialog" role="dialog" aria-modal="true" aria-labelledby="dialog-title">
@@ -120,14 +130,14 @@ footer{margin-bottom:2px}
 <div class="error" id="error" role="alert" hidden></div>
 <div class="finish" id="finish" hidden></div>
 <div class="bottom"><span class="note">Tap a suggested word AFTER playing it. No confirmation screen.</span><div class="bottom-buttons"><button type="button" id="back">← Back</button><button type="button" id="reset">↻ Reset</button></div></div>
-<footer>Unofficial helper · Activate's accepted-word list is not available. Suggestions favour everyday words. Tap ✕ for a rejected word; recording an accepted word teaches the helper for future attempts. Players report the wall letters change between rounds.</footer>
+<footer>Unofficial helper · Activate's accepted-word list is not available. Suggestions favour everyday words. Record an accepted word to advance and improve suggestions. Tap ✕ to hide a rejected word for future attempts. Players report the wall letters change between rounds.</footer>
 </main>
 <script src="./words.js"></script>
 <script>
 (function(){
 'use strict';
 var STORE='djsmarty-one-done-level4-v6';
-var state={wave:0,racks:['','',''],words:['','',''],finished:false,visible:3};
+var state={wave:0,racks:['','',''],words:['','',''],finished:false,visible:10,view:'entry'};
 function normal(s){return String(s||'').toLowerCase().replace(/[^a-z]/g,'')}
 function unique(s){return new Set(s).size===s.length}
 function get(id){return document.getElementById(id)}
@@ -142,6 +152,8 @@ try{
   state.racks=raw.racks.map(function(s){return Array.from(new Set(normal(s))).join('').toUpperCase()});
   state.wave=Math.min(2,Math.max(0,Number(raw.wave)||0));
   state.finished=!!raw.finished;
+  state.view=raw.view==='results'?'results':'entry';
+  state.visible=Math.max(10,Number(raw.visible)||10);
 
  }
 }catch(e){}
@@ -163,7 +175,7 @@ function rememberAccepted(word){accepted.add(word);rejected.delete(word);
 try{var rejectedSaved=JSON.parse(localStorage.getItem(REJECTED_KEY)||'[]');if(Array.isArray(rejectedSaved))rejectedSaved.forEach(function(w){if(/^[a-z]{4,6}$/.test(w))rejected.add(w)})}catch(ignore){}
 function rejectWord(word){rejected.add(word);accepted.delete(word);
  try{localStorage.setItem(REJECTED_KEY,JSON.stringify(Array.from(rejected)));localStorage.setItem(ACCEPTED_KEY,JSON.stringify(Array.from(accepted)))}catch(ignore){}
- renderQuick()
+ if(state.view==='results')renderSuggestions();else renderQuick()
 }
 accepted.forEach(function(w){
  if(/^[a-z]{4,6}$/.test(w)&&unique(w)&&!words.some(function(e){return e.word===w}))
@@ -224,14 +236,17 @@ function record(word,source){
  if(changed)for(var i=state.wave+1;i<3;i++){state.words[i]='';state.racks[i]=''}
  if(state.wave===2)state.finished=true;
  else{state.wave++;state.finished=false}
- state.visible=3;get('played').value='';get('manual-backdrop').hidden=true;setError('');save();render();
+ state.view='entry';state.visible=10;get('played').value='';get('manual-backdrop').hidden=true;setError('');save();render();
  window.scrollTo(0,0);
 }
 function toggle(letter){
  if(state.finished)return;
  var s=state.racks[state.wave],ix=s.indexOf(letter);
  state.racks[state.wave]=ix>=0?s.slice(0,ix)+s.slice(ix+1):s+letter;
- state.visible=3;setError('');save();renderQuick();
+ state.visible=10;setError('');
+ if(state.racks[state.wave].length>=16){state.view='results';save();render()}
+ else{save();renderQuick()}
+ 
 }
 var alphabet='ABCDEFGHIJKLMNOPQRSTUVWXYZ';
 alphabet.split('').forEach(function(letter){
@@ -255,7 +270,15 @@ function renderQuick(){
   btn.setAttribute('aria-label',letter+(selected?' selected - tap to remove':spent?' used earlier - can add to wall letters':' - tap to add'));
  }
  get('undo').disabled=!rack;get('clear').disabled=!rack;
- var matches=rank(),area=get('suggestions');area.replaceChildren();
+ get('see-words').disabled=rack.length<required(state.wave);
+ get('see-words').textContent=rack.length>=16?'SHOW WORD OPTIONS →':'SEE POSSIBLE WORDS →';
+}
+function renderSuggestions(){
+ var rack=state.racks[state.wave],matches=rank(),area=get('suggestions');
+ get('wall-summary').textContent=rack.length+' wall letters · '+before(state.wave).length+' already used';
+ get('results-title').textContent=state.wave===2?'6-LETTER ANSWERS':'BEST '+required(state.wave)+'-LETTER WORDS';
+ get('results-hint').textContent=state.wave===2?'Final round: all matching six-letter candidates are available. Tap ✓ when accepted, or ✕ to hide a rejected word.':'Recommended words first: common vocabulary and future flexibility. Tap ✓ only after Activate accepts the word; ✕ hides rejected words.';
+ area.replaceChildren();
  get('matchcount').textContent=rack?matches.length+' options':'';
  if(!rack||rack.length<required(state.wave)){
   var empty=document.createElement('div');empty.className='empty';
@@ -265,13 +288,13 @@ function renderQuick(){
   var empty=document.createElement('div');empty.className='empty';
   empty.textContent='No safe '+required(state.wave)+'-letter words yet. Tap more wall letters; orange-marked letters do not count for the badge.';
   area.appendChild(empty);
- }else matches.slice(0,state.visible).forEach(function(e,i){
+ }else matches.slice(0,state.wave===2?matches.length:state.visible).forEach(function(e,i){
   var row=document.createElement('div');row.className='recrow';
   var b=document.createElement('button');b.type='button';b.className='rec'+(i===0?' best':'');
   var word=document.createElement('span');word.className='word';word.textContent=e.word.toUpperCase();
   var cost=document.createElement('span');cost.className='cost';
   cost.textContent=accepted.has(e.word)?'ACCEPTED ✓':(e.tier===1&&e.freq>=40000?'COMMON':e.tier===1?'DICTIONARY':'EXTRA');
-  var go=document.createElement('span');go.className='go';go.textContent='USED ✓';
+  var go=document.createElement('span');go.className='go';go.textContent='✓ USED';
   b.append(word,cost,go);b.setAttribute('aria-label','Record '+e.word+' as successfully played and advance');
   b.addEventListener('click',function(){record(e.word,'selection')});
   var dismiss=document.createElement('button');dismiss.type='button';dismiss.className='reject';
@@ -280,7 +303,7 @@ function renderQuick(){
   dismiss.addEventListener('click',function(){rejectWord(e.word)});
   row.append(b,dismiss);area.appendChild(row);
  });
- get('more').hidden=matches.length<=state.visible;
+ get('more').hidden=state.wave===2||matches.length<=state.visible;
  get('more').textContent='More options · '+Math.max(0,matches.length-state.visible)+' remaining';
  get('reset-rejected').hidden=rejected.size===0;
 }
@@ -298,7 +321,8 @@ function render(){
  get('roundname').textContent='ROUND '+(wave+1)+' · '+required(wave)+' LETTERS';
  var beforeList=state.words.slice(0,wave).filter(Boolean);
  get('used').textContent=state.words[wave]?'This round: '+state.words[wave].toUpperCase():beforeList.length?'Used: '+beforeList.map(function(x){return x.toUpperCase()}).join(' / '):'No letters used yet';
- get('entry').hidden=finished;get('answers').hidden=finished;
+ get('entry').hidden=finished||state.view==='results';
+ get('answers').hidden=finished||state.view!=='results';
  get('manual-open').disabled=finished;
  get('entry-title').textContent='Tap new wall letters for Round '+(wave+1);
  get('keyboard-note').textContent='Grey = selected; orange dot = used earlier and excluded from answers.';
@@ -312,15 +336,22 @@ function render(){
   var strong=document.createElement('strong');strong.textContent='3 / 3 ROUNDS RECORDED';
   var info=document.createElement('span');info.textContent=state.words.map(function(w){return w.toUpperCase()}).join(' → ')+' · Check Activate for the badge.';
   get('finish').append(strong,info);
- }else{rankedFor(wave,usedMask(before(wave)));renderQuick()}
+ }else{rankedFor(wave,usedMask(before(wave)));if(state.view==='results')renderSuggestions();else renderQuick()}
 }
-get('undo').addEventListener('click',function(){var s=state.racks[state.wave];if(s){state.racks[state.wave]=s.slice(0,-1);state.visible=3;setError('');save();renderQuick()}});
-get('clear').addEventListener('click',function(){state.racks[state.wave]='';state.visible=3;setError('');save();renderQuick()});
-get('more').addEventListener('click',function(){state.visible+=6;save();renderQuick()});
-get('reset-rejected').addEventListener('click',function(){rejected.clear();try{localStorage.removeItem(REJECTED_KEY)}catch(ignore){}renderQuick()});
+get('undo').addEventListener('click',function(){var s=state.racks[state.wave];if(s){state.racks[state.wave]=s.slice(0,-1);state.visible=10;setError('');save();renderQuick()}});
+get('clear').addEventListener('click',function(){state.racks[state.wave]='';state.visible=10;setError('');save();renderQuick()});
+get('more').addEventListener('click',function(){state.visible+=10;save();renderSuggestions()});
+get('reset-rejected').addEventListener('click',function(){rejected.clear();try{localStorage.removeItem(REJECTED_KEY)}catch(ignore){}renderSuggestions()});
 get('back').addEventListener('click',function(){
  if(state.wave===0)return;
- state.wave--;state.finished=false;state.visible=3;setError('');save();render();
+ state.wave--;state.finished=false;state.visible=10;state.view='entry';setError('');save();render();
+});
+get('see-words').addEventListener('click',function(){
+ if(state.racks[state.wave].length<required(state.wave))return;
+ state.view='results';state.visible=10;save();render();window.scrollTo(0,0);
+});
+get('edit-letters').addEventListener('click',function(){
+ state.view='entry';state.visible=10;save();render();window.scrollTo(0,0);
 });
 get('manual-open').addEventListener('click',function(){
  if(state.finished)return;
@@ -332,7 +363,7 @@ get('manual-backdrop').addEventListener('click',function(e){if(e.target===get('m
 get('form').addEventListener('submit',function(e){e.preventDefault();record(get('played').value,'typed')});
 get('reset').addEventListener('click',function(){
  if(!confirm('Restart the three-round badge attempt?'))return;
- state={wave:0,racks:['','',''],words:['','',''],finished:false,visible:3};save();get('manual-backdrop').hidden=true;setError('');render()
+ state={wave:0,racks:['','',''],words:['','',''],finished:false,visible:10,view:'entry'};save();get('manual-backdrop').hidden=true;setError('');render()
 });
 render();
 if('serviceWorker' in navigator&&location.protocol.startsWith('http'))window.addEventListener('load',function(){navigator.serviceWorker.register('./sw.js').catch(function(){})});
