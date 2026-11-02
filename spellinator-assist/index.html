@@ -29,7 +29,7 @@ main{max-width:530px;margin:auto;padding:9px 10px calc(18px + env(safe-area-inse
 .statusline{display:flex;justify-content:space-between;align-items:center;gap:8px;min-height:21px;margin-bottom:5px}
 .roundname{font-size:.74rem;letter-spacing:.06em;font-weight:950;color:var(--cyan);text-transform:uppercase}
 .used{font-size:.68rem;color:#b9c8de;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.panel{border:1px solid #44516b;border-radius:13px;background:#171c2f;padding:12px;margin-bottom:9px;min-height:66vh}
+.panel{border:1px solid #44516b;border-radius:13px;background:#171c2f;padding:12px;margin-bottom:9px}
 .head{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:5px;min-height:25px}
 .head strong{font-size:.92rem;letter-spacing:.01em}
 .tools{display:flex;gap:5px;flex-shrink:0}.tools button{padding:5px 9px;border-radius:8px;border:1px solid #56657c;background:#272f47;color:#e2ebfd;font-size:.73rem;font-weight:800}
@@ -158,7 +158,7 @@ try{
  }
 }catch(e){}
 // Avoid obvious proper nouns, profanity and unreliable quick-pick suggestions.
-var avoid=new Set('fuck shit cunt piss porn rape sexy slut tits dick cock anal arse july june april march monday friday sunday tuesday google yahoo jesus satan israel london paris china japan india africa walmart blvd govt dept intl ltds http html https mysql json jpeg pdfs secs mins mins asap fyi btw wtf xbox'.split(' '));
+var avoid=new Set('fuck shit cunt piss porn rape sexy slut tits dick cock anal arse july june april march monday friday sunday tuesday google yahoo jesus satan israel london paris china japan india africa walmart blvd govt dept intl ltds http html https mysql json jpeg pdfs secs mins mins asap fyi btw wtf xbox raping raped rapes rapist rapists fucking fucked fucker shits shite shity sluts cocky'.split(' '));
 var words=(window.SPELL_WORDS||[]).filter(function(p){return /^[a-z]{4,6}$/.test(p[0])&&unique(p[0])&&!avoid.has(p[0])})
  .map(function(p){return {word:p[0],freq:Number(p[1])||1,tier:Number(p[2])||2,mask:usedMask(p[0]),len:p[0].length}});
 var REJECTED_KEY='djsmarty-spellinator-rejected-v1',rejected=new Set();
@@ -258,7 +258,7 @@ function renderQuick(){
  var rack=state.racks[state.wave],prior=new Set(before(state.wave).toUpperCase());
  var vowelCount=Array.from(rack).filter(function(ch){return 'AEIOU'.includes(ch)}).length;
  var consonantCount=rack.length-vowelCount;
- get('rack-stats').textContent='Selected: '+rack.length+'/16 letters · '+vowelCount+' vowels · '+consonantCount+' consonants';
+ get('rack-stats').textContent='Wall: '+rack.length+'/16 letters · '+vowelCount+' vowels · '+consonantCount+' consonants · Suggestions open automatically at 16';
  var display=get('rack');display.replaceChildren();
  for(var i=0;i<rack.length;i++){
   var chip=document.createElement('span');chip.className='letter'+(prior.has(rack[i])?' spent':'');chip.textContent=rack[i];display.appendChild(chip);
@@ -282,11 +282,11 @@ function renderSuggestions(){
  get('matchcount').textContent=rack?matches.length+' options':'';
  if(!rack||rack.length<required(state.wave)){
   var empty=document.createElement('div');empty.className='empty';
-  empty.textContent='Tap '+(required(state.wave)-rack.length>0?required(state.wave)-rack.length:'more')+' more available letters to begin.';
+  empty.textContent='Not enough wall letters entered to find a '+required(state.wave)+'-letter word. Tap EDIT LETTERS to add more.';
   area.appendChild(empty);
  }else if(!matches.length){
   var empty=document.createElement('div');empty.className='empty';
-  empty.textContent='No safe '+required(state.wave)+'-letter words yet. Tap more wall letters; orange-marked letters do not count for the badge.';
+  empty.textContent='No matching '+required(state.wave)+'-letter word found from the unused letters. Tap EDIT LETTERS to check the wall, or use PLAYED A WORD if you already found one.';
   area.appendChild(empty);
  }else matches.slice(0,state.wave===2?matches.length:state.visible).forEach(function(e,i){
   var row=document.createElement('div');row.className='recrow';
