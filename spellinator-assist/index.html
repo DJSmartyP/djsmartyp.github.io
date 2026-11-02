@@ -46,7 +46,7 @@ main{max-width:530px;margin:auto;padding:9px 10px calc(18px + env(safe-area-inse
 .key.spent:before{content:"•";position:absolute;top:-2px;right:4px;color:#fbc18e}
 .key:active{transform:scale(.96)}
 .key-placeholder{visibility:hidden}
-.rack-stats{font-size:.73rem;color:#bcd7ef;line-height:1.25;margin:-2px 1px 7px;font-weight:800}.rack-stats b{color:#68e0b8}.micro{font-size:.69rem;color:#aebbd1;margin:6px 1px 0;line-height:1.2}
+.rack-stats{display:flex;align-items:center;gap:13px;border:1px solid #4e7391;background:linear-gradient(100deg,#193a4d,#202a43);border-radius:12px;padding:10px 14px;margin:0 0 10px}.letter-count{min-width:82px;display:flex;flex-direction:column;align-items:center}.letter-count strong{font-size:clamp(2.7rem,11vw,3.7rem);font-weight:1000;line-height:.95;color:#7ce9d0;font-variant-numeric:tabular-nums}.letter-count span{font-size:.65rem;font-weight:950;letter-spacing:.07em;color:#d0effa;text-transform:uppercase;text-align:center;margin-top:4px}.letter-meta{flex:1;display:flex;flex-direction:column;gap:5px}.letter-meta strong{font-size:.92rem;color:#eefaff}.letter-meta small{font-size:.77rem;color:#c1d4e9;line-height:1.35}.micro{font-size:.69rem;color:#aebbd1;margin:6px 1px 0;line-height:1.2}
 .answers{border-radius:13px;background:#111d30;border:1px solid #2b526e;padding:11px;margin-bottom:8px;min-height:65vh}
 .title-row{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:5px}
 .title-row strong{color:#d9f7ff;font-size:1.07rem}
@@ -103,11 +103,11 @@ footer{margin-bottom:2px}
 <section class="panel" id="entry">
 <div class="head"><strong id="entry-title">Tap letters you can see</strong><div class="tools"><button type="button" id="undo">↶ Undo</button><button type="button" id="clear">Clear</button></div></div>
 <div class="rack" id="rack" aria-live="polite"></div>
-<div class="rack-stats" id="rack-stats" aria-live="off">Selected: 0 letters · 0 vowels · 0 consonants</div>
+<div class="rack-stats" aria-live="polite" aria-atomic="true"><div class="letter-count"><strong id="letter-count">0</strong><span>Letters entered</span></div><div class="letter-meta"><strong id="letter-breakdown">0 vowels · 0 consonants</strong><small>No fixed count. Enter all wall letters, then press ENTER.</small></div></div>
 <div class="keyboard" id="keyboard" role="group" aria-label="Alphabet letter buttons"></div>
 
 <div class="micro" id="keyboard-note">Grey = selected this round. <span style="color:#ffbf88">Orange dot = used earlier</span> (still tappable, but excluded from words).</div>
-<button id="see-words" type="button" class="entry-action">SHOW WORD OPTIONS →</button>
+<button id="see-words" type="button" class="entry-action">ENTER — SHOW WORDS →</button>
 </section>
 <section class="answers" id="answers" hidden>
 <div class="results-tools"><button id="edit-letters" type="button" class="edit-letters">← Edit letters</button><span class="wall-summary" id="wall-summary">0 letters entered</span></div>
@@ -243,9 +243,7 @@ function toggle(letter){
  if(state.finished)return;
  var s=state.racks[state.wave],ix=s.indexOf(letter);
  state.racks[state.wave]=ix>=0?s.slice(0,ix)+s.slice(ix+1):s+letter;
- state.visible=10;setError('');
- if(state.racks[state.wave].length>=16){state.view='results';save();render()}
- else{save();renderQuick()}
+ state.visible=10;setError('');save();renderQuick();
  
 }
 var alphabet='ABCDEFGHIJKLMNOPQRSTUVWXYZ';
@@ -258,7 +256,8 @@ function renderQuick(){
  var rack=state.racks[state.wave],prior=new Set(before(state.wave).toUpperCase());
  var vowelCount=Array.from(rack).filter(function(ch){return 'AEIOU'.includes(ch)}).length;
  var consonantCount=rack.length-vowelCount;
- get('rack-stats').textContent='Wall: '+rack.length+'/16 letters · '+vowelCount+' vowels · '+consonantCount+' consonants · Suggestions open automatically at 16';
+ get('letter-count').textContent=String(rack.length);
+ get('letter-breakdown').textContent=vowelCount+' vowel'+(vowelCount===1?'':'s')+' · '+consonantCount+' consonant'+(consonantCount===1?'':'s');
  var display=get('rack');display.replaceChildren();
  for(var i=0;i<rack.length;i++){
   var chip=document.createElement('span');chip.className='letter'+(prior.has(rack[i])?' spent':'');chip.textContent=rack[i];display.appendChild(chip);
@@ -271,7 +270,7 @@ function renderQuick(){
  }
  get('undo').disabled=!rack;get('clear').disabled=!rack;
  get('see-words').disabled=rack.length<required(state.wave);
- get('see-words').textContent=rack.length>=16?'SHOW WORD OPTIONS →':'SEE POSSIBLE WORDS →';
+ get('see-words').textContent='ENTER — SHOW WORDS →';
 }
 function renderSuggestions(){
  var rack=state.racks[state.wave],matches=rank(),area=get('suggestions');
