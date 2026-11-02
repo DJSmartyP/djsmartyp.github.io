@@ -17,8 +17,8 @@ This is now designed around **word selection**, not fast letter entry. Each roun
 
 **1. Enter the wall letters**
 - Tap the fixed A–Z alphabet, selecting the 16 letters displayed on the wall. The last key does **not** move: it greys out in place. Tap it again or use Undo to correct a mistake.
-- After the 16th letter, the app **automatically opens the word list**.
-- If the room gives a different number of letters, press **SEE POSSIBLE WORDS** after enough letters are entered. The app never enforces 16 as an absolute requirement.
+- The app **never advances automatically based on letter count**. A large live counter shows how many wall letters you've entered.
+- When you've entered all the wall letters, press **ENTER — SHOW WORDS**. There is no assumed wall-letter total; the button is available once you've entered at least enough distinct letters to spell the current round's word.
 - A previously used letter can still be entered if shown on the current wall, but cannot appear in a recommended word.
 
 **2. Find a word (larger text)**
@@ -59,4 +59,4 @@ If the game rejects a suggestion, press the **✕** beside it. It is hidden in f
 
 Neither source publishes Activate's accepted-word dictionary. **No candidate is guaranteed to work** until you've played it in the room.
 
-Offline cache: `djsmarty-one-and-done-v16`.
+Offline cache: `djsmarty-one-and-done-v17`.
