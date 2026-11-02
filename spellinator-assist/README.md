@@ -9,14 +9,24 @@ This is a phone-friendly helper for the 60-second Level 4 badge, focused only on
 2. Round 2: new wall letters; find a **5-letter** word without reusing letters already played.
 3. Round 3: new wall letters; find a **6-letter** word without repeating any letter from rounds 1 or 2.
 
-A July 2026 player discussion reports that letters change between rounds; new letters can appear. One player's recollection is about **15 available letters, 4 vowels and 11 consonants** (Y counted as a consonant). That quantity has **not** been independently verified for Watford. The assistant doesn't enforce it.
+A July 2026 player discussion reports that letters change between rounds; new letters can appear. One person recalled 15 letters (4 vowels + 11 consonants), but this has **not been verified for Level 4 or for Watford**. The [Spellinator Dictionary](https://activate.ryflix.ca/dictionary.html) specifically says that **Levels 6–10** always show four vowels; it does **not** make that claim about Level 4. The helper does not enforce any vowel/consonant or total-letter quota.
+
+## Community Spellinator Dictionary — verified source comparison (v21)
+
+The [Spellinator Dictionary](https://activate.ryflix.ca/dictionary.html) is a community word-finding tool maintained by RDawg, *not* a confirmed copy of Activate's internal accepted-word list. Its page identifies its source as the US **TWL Tournament Word List** from [redbo/scrabble](https://github.com/redbo/scrabble).
+
+The community tool describes **Levels 1–5** as allowing repeated letters in normal gameplay, whereas **Levels 6–10** always show four vowels. That is not an override of the **One and Done 2.0 badge**, which still requires using each letter no more than once across the three played answers.
+
+**JYNX is valid in international/UK Scrabble word lists but is absent from US/TWL.** Thus adopting the community TWL dictionary as the sole source would incorrectly remove a word that the badge guide recommends. The app deliberately retains JYNX as a **BADGE GUIDE TIP**, never an unverified claim that Activate accepted it.
+
+Use the community word finder as an additional reference, not proof of in-room acceptance. The helper's locally recorded accepted/rejected words remain the best available game-specific observations.
 
 ## Letter selection and badge rule (v19)
 
 The physical wall presents a **fresh randomised set of different letters in each round**. There are **no duplicate letters within one round**, but the same letter can reappear on the wall in later rounds.
 
 From the July 2026 Discord discussion:
-- A player **believed** the selection comprised **4 vowels and 11 consonants**, counting Y as a consonant: **15 distinct letters**. This estimate was not confirmed by another player and should not be treated as a fixed rule.
+- A player **believed** the selection comprised **4 vowels and 11 consonants**, counting Y as a consonant: **15 distinct letters**. This was not confirmed, and the community dictionary's guaranteed four-vowel description applies to Levels **6–10**, not explicitly Level 4.
 - Another player stated that the wall **changes between rounds**, so new letters can appear.
 - The badge requires **no repeated letters across the three played words**; it does not require playing every displayed letter.
 
@@ -84,4 +94,4 @@ If the game rejects a suggestion, press the **✕** beside it. It is hidden in f
 
 Neither source publishes Activate's accepted-word dictionary. **No candidate is guaranteed to work** until you've played it in the room.
 
-Offline cache: `djsmarty-one-and-done-v20`.
+Offline cache: `djsmarty-one-and-done-v21`.
