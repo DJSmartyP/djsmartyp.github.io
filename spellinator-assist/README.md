@@ -11,25 +11,29 @@ This is a phone-friendly helper for the 60-second Level 4 badge, focused only on
 
 A July 2026 player discussion reports that letters change between rounds; new letters can appear. One player's recollection is about **15 available letters, 4 vowels and 11 consonants** (Y counted as a consonant). That quantity has **not** been independently verified for Watford. The assistant doesn't enforce it.
 
-## Repeated wall letters (v18)
+## Letter selection and badge rule (v19)
 
-The wall may show about **16 physical letter tiles per round**, but **some tiles may have the same letter**. Every round has its own separate wall-letter bank.
+The physical wall presents a **fresh randomised set of different letters in each round**. There are **no duplicate letters within one round**, but the same letter can reappear on the wall in later rounds.
 
-- **Tap once per physical tile**, including duplicates. If the wall has two As, tap **A twice**; its fixed-position key shows **×2** and the large counter increases by two.
-- The large counter counts **physical tiles**, not unique letters. A second display reports vowel/consonant counts, **distinct letters**, and **unused distinct letters** after excluding earlier played words.
-- If you tap an extra letter, **Undo** removes the last tile; alternatively, tap any entered letter chip above the keyboard to remove just that one tile.
-- The **ENTER — SHOW WORDS** button is manual and does not enforce 16 physical tiles, since the exact wall count still needs an in-room check.
-- For the badge, **each letter can be used only once within a word and across all three words**. Two A tiles on the wall do not permit a word with AA. A letter used in an earlier round can still be entered if it reappears, but suggestions will exclude it.
-- The app saves every physical tile, including duplicates, for each round and reloads them correctly.
+From the July 2026 Discord discussion:
+- A player **believed** the selection comprised **4 vowels and 11 consonants**, counting Y as a consonant: **15 distinct letters**. This estimate was not confirmed by another player and should not be treated as a fixed rule.
+- Another player stated that the wall **changes between rounds**, so new letters can appear.
+- The badge requires **no repeated letters across the three played words**; it does not require playing every displayed letter.
 
-## The two-screen flow (v18)
+The assistant keeps each round's wall separate. It tracks the letters used in successful words for the entire three-round attempt, including when a used letter reappears on a new wall.
+
+The A–Z keyboard **does not move**. Tap each wall letter once to select it; **tap again to deselect**, instead of creating a duplicate. The large counter shows the number of **unique letters entered** plus the vowels, consonants and letters still usable for the badge. The reported 4+11 selection mix is shown only as a note and **never enforced**. Press **ENTER — SHOW WORDS** whenever you've entered the full wall.
+
+Previous v18 saves containing accidental duplicate wall entries are automatically normalised on load, preserving recorded words and progress.
+
+## The two-screen flow (v19)
 
 This is now designed around **word selection**, not fast letter entry. Each round has two large, separate screens:
 
 **1. Enter the wall letters**
-- Tap the fixed A–Z alphabet **once for every tile shown**, even if some letters repeat. Keys remain fixed, grey out and show ×2/×3 as needed. Tap a tile above the keyboard or use Undo to correct a mistake.
-- The app **never advances automatically based on letter count**. A large live counter shows how many wall letters you've entered.
-- When you've entered all the wall letters, press **ENTER — SHOW WORDS**. There is no assumed wall-letter total; the button is available once you've entered at least enough distinct letters to spell the current round's word.
+- Tap each visible letter **once** on the fixed A–Z keyboard. Keys remain fixed and grey out; tap a selected letter again to deselect it. You can also tap an entered letter chip or use Undo to correct a mistake.
+- The app **never advances automatically based on letter count**. A large live counter shows how many distinct wall letters you've entered.
+- When you've entered all the wall letters, press **ENTER — SHOW WORDS**. There is no assumed wall-letter total; the button is available once you've entered enough **unused distinct letters** for the current round's word.
 - A previously used letter can still be entered if shown on the current wall, but cannot appear in a recommended word.
 
 **2. Find a word (larger text)**
@@ -70,4 +74,4 @@ If the game rejects a suggestion, press the **✕** beside it. It is hidden in f
 
 Neither source publishes Activate's accepted-word dictionary. **No candidate is guaranteed to work** until you've played it in the room.
 
-Offline cache: `djsmarty-one-and-done-v18`.
+Offline cache: `djsmarty-one-and-done-v19`.
