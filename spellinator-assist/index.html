@@ -153,6 +153,11 @@ var REJECTED_KEY='djsmarty-spellinator-rejected-v1',rejected=new Set();
 var ACCEPTED_KEY='djsmarty-spellinator-accepted-v1',accepted=new Set();
 try{var known=JSON.parse(localStorage.getItem(ACCEPTED_KEY)||'[]');if(Array.isArray(known))known.forEach(function(w){if(/^[a-z]{4,6}$/.test(w))accepted.add(w)})}catch(ignore){}
 function rememberAccepted(word){accepted.add(word);rejected.delete(word);
+ if(!words.some(function(e){return e.word===word})){
+  words.push({word:word,freq:49000,tier:1,mask:usedMask(word),len:word.length});
+  if(word.length===5||word.length===6)futureWords.push(words[words.length-1]);
+  rankingCache={};
+ }
  try{localStorage.setItem(ACCEPTED_KEY,JSON.stringify(Array.from(accepted)));localStorage.setItem(REJECTED_KEY,JSON.stringify(Array.from(rejected)))}catch(ignore){}
 }
 try{var rejectedSaved=JSON.parse(localStorage.getItem(REJECTED_KEY)||'[]');if(Array.isArray(rejectedSaved))rejectedSaved.forEach(function(w){if(/^[a-z]{4,6}$/.test(w))rejected.add(w)})}catch(ignore){}
@@ -160,6 +165,10 @@ function rejectWord(word){rejected.add(word);accepted.delete(word);
  try{localStorage.setItem(REJECTED_KEY,JSON.stringify(Array.from(rejected)));localStorage.setItem(ACCEPTED_KEY,JSON.stringify(Array.from(accepted)))}catch(ignore){}
  renderQuick()
 }
+accepted.forEach(function(w){
+ if(/^[a-z]{4,6}$/.test(w)&&unique(w)&&!words.some(function(e){return e.word===w}))
+  words.push({word:w,freq:49000,tier:1,mask:usedMask(w),len:w.length});
+});
 var futureWords=words.filter(function(x){return x.len===5||x.len===6});
 function validate(word,wave,needRack){
  word=normal(word);
