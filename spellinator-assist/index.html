@@ -161,37 +161,25 @@ function validate(word,wave,needRack){
 }
 var rankingCache={};
 function rankedFor(wave,prior){
- var key=wave+'|'+prior;
- if(rankingCache[key])return rankingCache[key];
+ var key=wave+'|'+prior;if(rankingCache[key])return rankingCache[key];
  var target=required(wave),current=words.filter(function(e){return e.len===target&&!(e.mask&prior)});
- if(wave===2){
-  rankingCache[key]=current.map(function(e){return {word:e.word,vowels:(e.word.match(/[aeiou]/g)||[]).length,score:e.freq,freq:e.freq,mask:e.mask}})
-    .sort(function(a,b){return b.score-a.score||a.word.localeCompare(b.word)});
-  return rankingCache[key];
- }
- var future=futureWords.filter(function(e){return e.len>target&&!(e.mask&prior)&&e.freq>=11500});
- var futureWeights=future.map(function(e){return Math.pow(e.freq/20000,3)});
- var total=futureWeights.reduce(function(sum,n){return sum+n},0);
+ if(wave===2){rankingCache[key]=current.map(function(e){return {word:e.word,vowels:(e.word.match(/[aeiou]/g)||[]).length,score:e.freq,freq:e.freq,mask:e.mask}}).sort(function(a,b){return b.score-a.score||a.word.localeCompare(b.word)});return rankingCache[key]}
+ var nextLen=target+1,future=words.filter(function(e){return e.len===nextLen&&!(e.mask&prior)&&e.freq>=12000});
+ var options=future.map(function(e){return {mask:e.mask,weight:Math.pow(e.freq/20000,2)}});
  rankingCache[key]=current.map(function(e){
-  var kept=0;
-  for(var j=0;j<future.length;j++)if(!(future[j].mask&e.mask))kept+=futureWeights[j];
-  var vowels=(e.word.match(/[aeiou]/g)||[]).length;
-  var y=e.word.indexOf('y')>=0?1:0;
+  var vowels=(e.word.match(/[aeiou]/g)||[]).length,possible=0,weight=0;
+  for(var i=0;i<options.length;i++)if(!(options[i].mask&e.mask)){possible++;weight+=options[i].weight}
   var familiar=Math.max(0,Math.min(1,(e.freq-9500)/10500));
-  // Rare no-vowel strings are often abbreviations rather than playable words.
-  var improbable=(vowels===0&&!y)?30:0;
-  var score=80*(total?kept/total:0)+36*familiar-12*vowels-3*y-(e.freq<12000?24:0)-improbable;
-  return {word:e.word,vowels:vowels,score:score,freq:e.freq,mask:e.mask};
+  var score=40*Math.log1p(weight)+28*familiar-(wave===0?6:3)*vowels-(e.freq<12000?25:0)-(vowels===0&&!e.word.includes('y')?35:0);
+  return {word:e.word,vowels:vowels,score:score,freq:e.freq,mask:e.mask,options:possible};
  }).sort(function(a,b){return b.score-a.score||b.freq-a.freq||a.word.localeCompare(b.word)});
  return rankingCache[key];
 }
 function rank(){
- var rack=normal(state.racks[state.wave]),prior=usedMask(before(state.wave));
- if(!rack)return [];
+ var rack=normal(state.racks[state.wave]),prior=usedMask(before(state.wave));if(!rack)return [];
  var available=usedMask(rack);
  return rankedFor(state.wave,prior).filter(function(e){return (e.mask&available)===e.mask});
 }
-
 function setError(message){
  get('error').hidden=!message;get('error').textContent=message||'';
  get('modal-error').hidden=!message;get('modal-error').textContent=message||'';
@@ -224,7 +212,7 @@ function renderQuick(){
  var rack=state.racks[state.wave],prior=new Set(before(state.wave).toUpperCase());
  var vowelCount=Array.from(rack).filter(function(ch){return 'AEIOU'.includes(ch)}).length;
  var consonantCount=rack.length-vowelCount;
- get('rack-stats').textContent='Selected: '+rack.length+' letters · '+vowelCount+' vowels · '+consonantCount+' consonants';
+ get('rack-stats').textContent='Selected: '+rack.length+'/16 letters · '+vowelCount+' vowels · '+consonantCount+' consonants';
  var display=get('rack');display.replaceChildren();
  for(var i=0;i<rack.length;i++){
   var chip=document.createElement('span');chip.className='letter'+(prior.has(rack[i])?' spent':'');chip.textContent=rack[i];display.appendChild(chip);
@@ -249,7 +237,7 @@ function renderQuick(){
  }else matches.slice(0,state.visible).forEach(function(e,i){
   var b=document.createElement('button');b.type='button';b.className='rec'+(i===0?' best':'');
   var word=document.createElement('span');word.className='word';word.textContent=e.word.toUpperCase();
-  var cost=document.createElement('span');cost.className='cost';cost.textContent=state.wave===2?'Final':e.vowels+' vowel'+(e.vowels===1?'':'s');
+  var cost=document.createElement('span');cost.className='cost';cost.textContent=state.wave===2?'Final':e.vowels+' vowel'+(e.vowels===1?'':'s')+' · '+e.options+' next';
   var go=document.createElement('span');go.className='go';go.textContent='USED ✓';
   b.append(word,cost,go);b.setAttribute('aria-label','Record '+e.word+' as successfully played and advance');
   b.addEventListener('click',function(){record(e.word,'selection')});area.appendChild(b)
