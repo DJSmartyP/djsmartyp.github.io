@@ -120,7 +120,7 @@ footer{margin-bottom:2px}
 <div class="error" id="error" role="alert" hidden></div>
 <div class="finish" id="finish" hidden></div>
 <div class="bottom"><span class="note">Tap a suggested word AFTER playing it. No confirmation screen.</span><div class="bottom-buttons"><button type="button" id="back">← Back</button><button type="button" id="reset">↻ Reset</button></div></div>
-<footer>Unofficial helper · Activate's accepted-word list is not available. Suggestions prioritise recognisable words confirmed in a general dictionary. The X hides words Activate rejects. Players report the wall letters change between rounds.</footer>
+<footer>Unofficial helper · Activate's accepted-word list is not available. Suggestions favour everyday words. Tap ✕ for a rejected word; recording an accepted word teaches the helper for future attempts. Players report the wall letters change between rounds.</footer>
 </main>
 <script src="./words.js"></script>
 <script>
@@ -150,8 +150,16 @@ var avoid=new Set('fuck shit cunt piss porn rape sexy slut tits dick cock anal a
 var words=(window.SPELL_WORDS||[]).filter(function(p){return /^[a-z]{4,6}$/.test(p[0])&&unique(p[0])&&!avoid.has(p[0])})
  .map(function(p){return {word:p[0],freq:Number(p[1])||1,tier:Number(p[2])||2,mask:usedMask(p[0]),len:p[0].length}});
 var REJECTED_KEY='djsmarty-spellinator-rejected-v1',rejected=new Set();
+var ACCEPTED_KEY='djsmarty-spellinator-accepted-v1',accepted=new Set();
+try{var known=JSON.parse(localStorage.getItem(ACCEPTED_KEY)||'[]');if(Array.isArray(known))known.forEach(function(w){if(/^[a-z]{4,6}$/.test(w))accepted.add(w)})}catch(ignore){}
+function rememberAccepted(word){accepted.add(word);rejected.delete(word);
+ try{localStorage.setItem(ACCEPTED_KEY,JSON.stringify(Array.from(accepted)));localStorage.setItem(REJECTED_KEY,JSON.stringify(Array.from(rejected)))}catch(ignore){}
+}
 try{var rejectedSaved=JSON.parse(localStorage.getItem(REJECTED_KEY)||'[]');if(Array.isArray(rejectedSaved))rejectedSaved.forEach(function(w){if(/^[a-z]{4,6}$/.test(w))rejected.add(w)})}catch(ignore){}
-function rejectWord(word){rejected.add(word);try{localStorage.setItem(REJECTED_KEY,JSON.stringify(Array.from(rejected)))}catch(ignore){}renderQuick()}
+function rejectWord(word){rejected.add(word);accepted.delete(word);
+ try{localStorage.setItem(REJECTED_KEY,JSON.stringify(Array.from(rejected)));localStorage.setItem(ACCEPTED_KEY,JSON.stringify(Array.from(accepted)))}catch(ignore){}
+ renderQuick()
+}
 var futureWords=words.filter(function(x){return x.len===5||x.len===6});
 function validate(word,wave,needRack){
  word=normal(word);
@@ -190,7 +198,8 @@ function rankedFor(wave,prior){
 function rank(){
  var rack=normal(state.racks[state.wave]),prior=usedMask(before(state.wave));if(!rack)return [];
  var available=usedMask(rack);
- return rankedFor(state.wave,prior).filter(function(e){return !rejected.has(e.word)&&(e.mask&available)===e.mask});
+ return rankedFor(state.wave,prior).filter(function(e){return !rejected.has(e.word)&&(e.mask&available)===e.mask})
+ .sort(function(a,b){return Number(accepted.has(b.word))-Number(accepted.has(a.word))||b.score-a.score});
 }
 function setError(message){
  get('error').hidden=!message;get('error').textContent=message||'';
@@ -202,6 +211,7 @@ function record(word,source){
  if(err){setError(err);return}
  var changed=state.words[state.wave]!==word;
  state.words[state.wave]=word;
+ rememberAccepted(word);
  if(changed)for(var i=state.wave+1;i<3;i++){state.words[i]='';state.racks[i]=''}
  if(state.wave===2)state.finished=true;
  else{state.wave++;state.finished=false}
@@ -251,7 +261,7 @@ function renderQuick(){
   var b=document.createElement('button');b.type='button';b.className='rec'+(i===0?' best':'');
   var word=document.createElement('span');word.className='word';word.textContent=e.word.toUpperCase();
   var cost=document.createElement('span');cost.className='cost';
-  cost.textContent=(e.tier===1&&e.freq>=40000?'COMMON':e.tier===1?'DICTIONARY':'EXTRA');
+  cost.textContent=accepted.has(e.word)?'ACCEPTED ✓':(e.tier===1&&e.freq>=40000?'COMMON':e.tier===1?'DICTIONARY':'EXTRA');
   var go=document.createElement('span');go.className='go';go.textContent='USED ✓';
   b.append(word,cost,go);b.setAttribute('aria-label','Record '+e.word+' as successfully played and advance');
   b.addEventListener('click',function(){record(e.word,'selection')});
