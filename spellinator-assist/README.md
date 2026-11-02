@@ -46,8 +46,18 @@ This is now designed around **word selection**, not fast letter entry. Each roun
 
 The app remembers your current round and the screen you reached. It can also return to prior rounds for corrections. Replacing an earlier recorded word clears all later words to keep letter lockouts correct.
 
+## Badge-specific opening strategy (v20)
+
+**JYNX is included and ranked first in Round 1 whenever J, Y, N and X are available**, unless this user has marked it rejected.
+
+- Community One and Done 2.0 badge guide: [Activate Badge Tracker](https://activate.ryflix.ca/badges.html). Its specific advice is: conserve vowels until the final wave; **JYNX is a good word to start with if possible**.
+- JYNX (a wryneck bird / a spell) is valid in UK/international Scrabble reference lists but not in US TWL. The original US-oriented/frequency-filtered dictionary omitted it. [UK word reference](https://wordfinderpro.com/dictionary/jynx).
+- **Crucial limitation:** Neither source proves that Activate's own word dictionary accepts JYNX. It is labelled **BADGE GUIDE TIP**, not **ACCEPTED ✓**, until recorded as actually accepted on this device. If the room rejects it, tap ✕ to hide it from future suggestions.
+- Round 1 ranking now strongly favours leaving A/E/I/O/U available, shedding difficult consonants and preserving potential five- **and six-letter** words. Round 2 considers remaining six-letter possibilities; Round 3 prioritises word familiarity and shows all matches.
+- These are **heuristics**, because the next round's wall is random and we don't know Activate's accepted-word list. There is no reliable way to guarantee the best three-word path.
+
 ## Ranking
-Rounds 1 and 2 favour familiar candidates that save vowels and preserve potential dictionary words for the next round. Future tiles are unknown, so this is a heuristic, not a guarantee. Round 3 prioritises familiar six-letter words.
+Round 1 conserves vowels, favours less-useful consonants and measures how many familiar five- and six-letter options remain. Round 2 emphasises preserving six-letter options. Word familiarity still matters: obscure theoretical choices may not be accepted by Activate. The later wall letters are unknown, so this is not a guaranteed success model. Round 3 prioritises familiar six-letter words.
 
 ## Removed
 The speculative **same letters throughout** mode, fixed-letter three-word solver, and their controls have been permanently removed, based on the players' report that the letters change between rounds.
@@ -74,4 +84,4 @@ If the game rejects a suggestion, press the **✕** beside it. It is hidden in f
 
 Neither source publishes Activate's accepted-word dictionary. **No candidate is guaranteed to work** until you've played it in the room.
 
-Offline cache: `djsmarty-one-and-done-v19`.
+Offline cache: `djsmarty-one-and-done-v20`.
