@@ -130,9 +130,9 @@ footer{margin-bottom:2px}
 <div class="error" id="error" role="alert" hidden></div>
 <div class="finish" id="finish" hidden></div>
 <div class="bottom"><span class="note">Tap a suggested word AFTER playing it. No confirmation screen.</span><div class="bottom-buttons"><button type="button" id="back">← Back</button><button type="button" id="reset">↻ Reset</button></div></div>
-<footer>v22 · Full community dictionary: 178,691 TWL entries, plus JYNX as a badge-guide extra. Not an official Activate word list. Accepted/rejected words are remembered on this device.</footer>
+<footer>v23 · Equal word weighting · Full community dictionary: 178,691 TWL entries, plus JYNX as a badge-guide extra. Not an official Activate word list. Accepted/rejected words are remembered on this device.</footer>
 </main>
-<script src="./words.js?v=22"></script>
+<script src="./words.js?v=23"></script>
 <script>
 (function(){
 'use strict';
@@ -160,28 +160,25 @@ try{
  }
 }catch(e){}
 var words=(window.SPELL_WORDS||[]).filter(function(p){return /^[a-z]{4,6}$/.test(p[0])&&unique(p[0])})
- .map(function(p){return {word:p[0],freq:Number(p[1])||1,tier:Number(p[2])||2,mask:usedMask(p[0]),len:p[0].length}});
+ .map(function(p){return {word:p[0],mask:usedMask(p[0]),len:p[0].length}});
 var REJECTED_KEY='djsmarty-spellinator-rejected-v1',rejected=new Set();
 var ACCEPTED_KEY='djsmarty-spellinator-accepted-v1',accepted=new Set();
 try{var known=JSON.parse(localStorage.getItem(ACCEPTED_KEY)||'[]');if(Array.isArray(known))known.forEach(function(w){if(/^[a-z]{4,6}$/.test(w))accepted.add(w)})}catch(ignore){}
-function rememberAccepted(word){accepted.add(word);rejected.delete(word);
+function rememberAccepted(word){accepted.add(word);rejected.delete(word);rankingCache={};
  if(!words.some(function(e){return e.word===word})){
-  words.push({word:word,freq:49000,tier:1,mask:usedMask(word),len:word.length});
-  if(word.length===5||word.length===6)futureWords.push(words[words.length-1]);
-  rankingCache={};
+  words.push({word:word,mask:usedMask(word),len:word.length});
  }
  try{localStorage.setItem(ACCEPTED_KEY,JSON.stringify(Array.from(accepted)));localStorage.setItem(REJECTED_KEY,JSON.stringify(Array.from(rejected)))}catch(ignore){}
 }
 try{var rejectedSaved=JSON.parse(localStorage.getItem(REJECTED_KEY)||'[]');if(Array.isArray(rejectedSaved))rejectedSaved.forEach(function(w){if(/^[a-z]{4,6}$/.test(w))rejected.add(w)})}catch(ignore){}
-function rejectWord(word){rejected.add(word);accepted.delete(word);
+function rejectWord(word){rejected.add(word);accepted.delete(word);rankingCache={};
  try{localStorage.setItem(REJECTED_KEY,JSON.stringify(Array.from(rejected)));localStorage.setItem(ACCEPTED_KEY,JSON.stringify(Array.from(accepted)))}catch(ignore){}
  if(state.view==='results')renderSuggestions();else renderQuick()
 }
 accepted.forEach(function(w){
  if(/^[a-z]{4,6}$/.test(w)&&unique(w)&&!words.some(function(e){return e.word===w}))
-  words.push({word:w,freq:49000,tier:1,mask:usedMask(w),len:w.length});
+  words.push({word:w,mask:usedMask(w),len:w.length});
 });
-var futureWords=words.filter(function(x){return x.len===5||x.len===6});
 function validate(word,wave,needRack){
  word=normal(word);
  if(word.length!==required(wave))return 'Round '+(wave+1)+' needs '+required(wave)+' letters.';
@@ -192,54 +189,53 @@ function validate(word,wave,needRack){
  return '';
 }
 var rankingCache={};
-function rankedFor(wave,prior){
- var key=wave+'|'+prior;if(rankingCache[key])return rankingCache[key];
- var target=required(wave),current=words.filter(function(e){return e.len===target&&!(e.mask&prior)});
- // Unknown future walls: preserve a diverse pool of familiar five- and six-letter words.
- // Round 1 considers BOTH later word lengths; round 2 focuses on the final six-letter word.
- var future=wave<2?words.filter(function(e){
-  return e.tier===1&&e.freq>=27000&&!(e.mask&prior)&&
-   (e.len===nextLength(wave)||(wave===0&&e.len===6));
- }):[];
- var totalFuture=0,futureWeights=[];
- for(var j=0;j<future.length;j++){
-  var weight=Math.pow(future[j].freq/50000,2)*(future[j].len===6&&wave===0?0.65:1);
-  futureWeights.push(weight);totalFuture+=weight;
- }
- rankingCache[key]=current.map(function(e){
-  var vowels=(e.word.match(/[aeiou]/g)||[]).length;
-  var hasY=e.word.indexOf('y')>=0;
-  var rare=(e.word.match(/[jqxz]/g)||[]).length;
-  var familiarity=Math.pow(Math.min(1,e.freq/50000),2);
-  var futureRatio=0,remaining=0;
-  if(wave<2&&totalFuture){
-   for(var k=0;k<future.length;k++)if(!(e.mask&future[k].mask))remaining+=futureWeights[k];
-   futureRatio=remaining/totalFuture;
+function rankedFor(wave,prior,available){
+ // Score only playable current candidates. Every dictionary entry has equal weight;
+ // frequency, source tier, accepted history and special-word bonuses are not used.
+ var key=wave+'|'+prior+'|'+available+'|'+Array.from(rejected).sort().join(',');
+ if(rankingCache[key])return rankingCache[key];
+ var eligible=words.filter(function(e){return !(e.mask&prior)&&!rejected.has(e.word)});
+ var current=eligible.filter(function(e){return e.len===required(wave)&&(e.mask&available)===e.mask});
+ var five=wave===0?eligible.filter(function(e){return e.len===5}):[];
+ var six=wave<2?eligible.filter(function(e){return e.len===6}):[];
+ var maskScores={};
+ var ranked=current.map(function(e){
+  var metrics=maskScores[e.mask];
+  if(!metrics){
+   var remainingFive=five.filter(function(f){return !(f.mask&e.mask)});
+   var remainingSix=six.filter(function(f){return !(f.mask&e.mask)});
+   var continuation=wave===2||remainingSix.length>0;
+   if(wave===0){
+    // Both lengths surviving independently is insufficient: there must also be
+    // at least one non-overlapping 5 + 6-letter pair after this opening.
+    continuation=false;
+    for(var i=0;i<remainingFive.length&&!continuation;i++){
+     for(var j=0;j<remainingSix.length;j++){
+      if(!(remainingFive[i].mask&remainingSix[j].mask)){continuation=true;break}
+     }
+    }
+   }
+   // Round 1 balances retention of both future lengths. Round 2 maximises
+   // the exact number of six-letter words left. This measures dictionary
+   // flexibility, not the probability of seeing an unknown future wall.
+   var score=wave===0?Math.sqrt((remainingFive.length/(five.length||1))*(remainingSix.length/(six.length||1))):remainingSix.length;
+   metrics={fiveLeft:remainingFive.length,sixLeft:remainingSix.length,continuation:continuation,score:score};
+   maskScores[e.mask]=metrics;
   }
-  // A common word is useful, but preserving vowels and hard consonants is
-  // unusually important for three DIFFERENT words with no reused letters.
-  // This is a heuristic for unknown wall letters, not a probability or guaranteed solution.
-  var score=90*familiarity+35*(e.tier===1?1:0)+110*futureRatio;
-  if(wave<2){
-   score-=(wave===0?22:14)*vowels;
-   score+=(wave===0?13:7)*rare;
-  }
-  if(e.freq<19000)score-=25;
-  if(vowels===0&&!hasY)score-=32;
-  // Badge guide specifically identifies JYNX as a useful no-vowel opening word.
-  // Its absence from our US-oriented source dictionary previously hid it entirely.
-  // Do not call it officially accepted until confirmed by the player.
-  if(wave===0&&e.word==='jynx')score+=270;
-  return {word:e.word,vowels:vowels,score:score,freq:e.freq,tier:e.tier,mask:e.mask,strategyTip:wave===0&&e.word==='jynx'};
- }).sort(function(a,b){return b.score-a.score||b.freq-a.freq||a.word.localeCompare(b.word)});
- return rankingCache[key];
+  return {word:e.word,mask:e.mask,vowels:(e.word.match(/[aeiou]/g)||[]).length,
+   score:metrics.score,fiveLeft:metrics.fiveLeft,sixLeft:metrics.sixLeft,continuation:metrics.continuation};
+ });
+ ranked.sort(function(a,b){
+  if(wave===2)return a.word.localeCompare(b.word);
+  return Number(b.continuation)-Number(a.continuation)||b.score-a.score||
+   b.sixLeft-a.sixLeft||a.vowels-b.vowels||a.word.localeCompare(b.word);
+ });
+ rankingCache[key]=ranked;
+ return ranked;
 }
-function nextLength(wave){return required(wave)+1}
 function rank(){
- var rack=normal(state.racks[state.wave]),prior=usedMask(before(state.wave));if(!rack)return [];
- var available=usedMask(rack);
- return rankedFor(state.wave,prior).filter(function(e){return !rejected.has(e.word)&&(e.mask&available)===e.mask})
- .sort(function(a,b){return Number(accepted.has(b.word))-Number(accepted.has(a.word))||b.score-a.score});
+ var rack=normal(state.racks[state.wave]);if(!rack)return [];
+ return rankedFor(state.wave,usedMask(before(state.wave)),usedMask(rack));
 }
 function setError(message){
  get('error').hidden=!message;get('error').textContent=message||'';
@@ -311,7 +307,7 @@ function renderSuggestions(){
  var rack=state.racks[state.wave],matches=rank(),area=get('suggestions');
  get('wall-summary').textContent=rack.length+' wall letters · '+before(state.wave).length+' previously played';
  get('results-title').textContent=state.wave===2?'6-LETTER ANSWERS':'BEST '+required(state.wave)+'-LETTER WORDS';
- get('results-hint').textContent=state.wave===2?'Final round: all matching six-letter candidates are available. Tap ✓ when accepted, or ✕ to hide a rejected word.':state.wave===0&&matches.some(function(e){return e.word==='jynx'})?'Badge guide tip: JYNX saves every A/E/I/O/U vowel. UK-valid word, but Activate acceptance is unconfirmed. Tap ✕ if rejected.':'Recommendations balance word familiarity with conserving vowels and future word choices. Tap ✓ only after Activate accepts a word; ✕ hides rejected words.';
+ get('results-hint').textContent=state.wave===2?'All matching six-letter words, with equal priority. Tap ✓ only after Activate accepts a word.': 'All dictionary words count equally. Ranked by future word options preserved; future walls are unknown, so a finish cannot be guaranteed.';
  area.replaceChildren();
  get('matchcount').textContent=rack?matches.length+' options':'';
  if(!rack||rack.length<required(state.wave)){
@@ -324,10 +320,10 @@ function renderSuggestions(){
   area.appendChild(empty);
  }else matches.slice(0,state.wave===2?matches.length:state.visible).forEach(function(e,i){
   var row=document.createElement('div');row.className='recrow';
-  var b=document.createElement('button');b.type='button';b.className='rec'+(i===0?' best':'')+(e.strategyTip?' strategy':'');
+  var b=document.createElement('button');b.type='button';b.className='rec'+(i===0?' best':'');
   var word=document.createElement('span');word.className='word';word.textContent=e.word.toUpperCase();
   var cost=document.createElement('span');cost.className='cost';
-  cost.textContent=accepted.has(e.word)?'ACCEPTED ✓':e.strategyTip?'BADGE GUIDE TIP':(e.tier===1&&e.freq>=40000?'COMMON':e.tier===1?'DICTIONARY':'EXTRA');
+  cost.textContent=state.wave===2?(accepted.has(e.word)?'ACCEPTED ✓':'DICTIONARY MATCH'):!e.continuation?'NO FULL CONTINUATION IN DICTIONARY':state.wave===0?e.fiveLeft+' five-letter · '+e.sixLeft+' six-letter options left':e.sixLeft+' six-letter options left';
   var go=document.createElement('span');go.className='go';go.textContent='✓ USED';
   b.append(word,cost,go);b.setAttribute('aria-label','Record '+e.word+' as successfully played and advance');
   b.addEventListener('click',function(){record(e.word,'selection')});
@@ -375,7 +371,7 @@ function render(){
 get('undo').addEventListener('click',function(){var s=state.racks[state.wave];if(s){state.racks[state.wave]=s.slice(0,-1);state.visible=10;setError('');save();renderQuick()}});
 get('clear').addEventListener('click',function(){state.racks[state.wave]='';state.visible=10;setError('');save();renderQuick()});
 get('more').addEventListener('click',function(){state.visible+=10;save();renderSuggestions()});
-get('reset-rejected').addEventListener('click',function(){rejected.clear();try{localStorage.removeItem(REJECTED_KEY)}catch(ignore){}renderSuggestions()});
+get('reset-rejected').addEventListener('click',function(){rejected.clear();rankingCache={};try{localStorage.removeItem(REJECTED_KEY)}catch(ignore){}renderSuggestions()});
 get('back').addEventListener('click',function(){
  if(state.wave===0)return;
  state.wave--;state.finished=false;state.visible=10;state.view='entry';setError('');save();render();

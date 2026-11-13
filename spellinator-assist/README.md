@@ -11,11 +11,25 @@ This is a phone-friendly helper for the 60-second Level 4 badge, focused only on
 
 A July 2026 player discussion reports that letters change between rounds; new letters can appear. One person recalled 15 letters (4 vowels + 11 consonants), but this has **not been verified for Level 4 or for Watford**. The [Spellinator Dictionary](https://activate.ryflix.ca/dictionary.html) specifically says that **Levels 6–10** always show four vowels; it does **not** make that claim about Level 4. The helper does not enforce any vowel/consonant or total-letter quota.
 
+## Equal-word strategy (v23)
+
+Every eligible entry in the full community dictionary, JYNX, and locally recorded additions has equal weight. The ranking ignores all old frequency/tier metadata, removes the JYNX bonus, and does not promote previously accepted words above better letter-preserving choices. Explicitly rejected words are still excluded until restored.
+
+- Round 1 ranks by the geometric mean of the proportions of five- and six-letter words retained. Each dictionary word contributes one. It also verifies that at least one mutually non-overlapping five/six-letter pair survives, preferring such openings over dead ends.
+- Round 2 ranks by the exact number of six-letter dictionary words left after using the candidate.
+- Ties favour the number of six-letter options retained, then fewer A/E/I/O/U vowels consumed, then alphabetical order. Round 3 lists every match alphabetically.
+
+This preserves useful consonants as well as vowels by measuring their actual effect across the complete eligible word list. Candidate cards show the future dictionary counts; those counts are not promises that the next random wall will contain the letters. Current-wall availability is applied before scoring. Rejections affect both suggestions and future counts.
+
+No answer with the correct length, available letters, unique letters and no previously used letters is hidden by ranking. If a fresh wall yields no match, all eligible dictionary entries have been searched. The full dictionary cannot guarantee success against unknown future walls or verify in-room acceptance.
+
+Validation includes the LAZY → THROW screenshot regression; unfamiliar-word/accepted-history bias checks; disjoint follow-on checks; and 60 deterministic random-wall attempts compared round by round against an independent exhaustive dictionary filter. Asset and service-worker versions are v23; word content is the complete v22 import below.
+
 ## Full community dictionary import (v22)
 
 The entire word list referenced by https://activate.ryflix.ca/dictionary.html is now bundled offline in `words.js`: **178,691 distinct TWL entries**, fetched from https://raw.githubusercontent.com/redbo/scrabble/master/dictionary.txt on 13 November 2026. The raw source SHA-256 is `eda7bc8b86a534de8065a7d0cc091dc918d400475061749d05a5711afda12a3b`.
 
-No frequency, familiarity, profanity, or proper-noun shortlist excludes source entries. The app still filters by the current 4/5/6-letter round, unique letters, available wall letters, letters used in earlier answers, and the player's explicit rejections. Familiarity data only orders suggestions. JYNX is kept as a separate badge-guide extra because it is absent from this US list. This community list does not establish official Activate acceptance.
+No frequency, familiarity, profanity, or proper-noun shortlist excludes source entries. The app still filters by the current 4/5/6-letter round, unique letters, available wall letters, letters used in earlier answers, and the player's explicit rejections. In v22, familiarity data only ordered suggestions; v23 ignores it entirely. JYNX is kept as a separate badge-guide extra because it is absent from this US list. This community list does not establish official Activate acceptance.
 
 Regression case: LAZY → THROW, then wall `CABXWPTSYDOUFRI`, must offer **CUPIDS** and **CUSPID**. The screenshots also supply round 1 `ZPSAGOYXIVLDEJT` and round 2 `ILEPTJNUXOWRHSF`; both played words fit their respective walls and satisfy the badge restrictions.
 
