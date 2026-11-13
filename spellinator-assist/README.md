@@ -11,6 +11,10 @@ This is a phone-friendly helper for the 60-second Level 4 badge, focused only on
 
 A July 2026 player discussion reports that letters change between rounds; new letters can appear. One person recalled 15 letters (4 vowels + 11 consonants), but this has **not been verified for Level 4 or for Watford**. The [Spellinator Dictionary](https://activate.ryflix.ca/dictionary.html) specifically says that **Levels 6–10** always show four vowels; it does **not** make that claim about Level 4. The helper does not enforce any vowel/consonant or total-letter quota.
 
+## Wall limit (v24)
+
+Each round accepts at most **15 unique wall letters**, including any previously used answer letters that reappear. At the limit, new-letter keys are disabled; selected letters remain removable. Saved racks are normalised to unique letters and capped at 15 on reload. There is no fixed vowel/consonant quota. v24 retains the equal-word strategy below.
+
 ## Equal-word strategy (v23)
 
 Every eligible entry in the full community dictionary, JYNX, and locally recorded additions has equal weight. The ranking ignores all old frequency/tier metadata, removes the JYNX bonus, and does not promote previously accepted words above better letter-preserving choices. Explicitly rejected words are still excluded until restored.

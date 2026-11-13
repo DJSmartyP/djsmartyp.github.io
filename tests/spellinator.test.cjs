@@ -5,8 +5,10 @@ const path = require('node:path');
 const vm = require('node:vm');
 const root = path.join(__dirname, '../spellinator-assist');
 
-function load(rows) {
-  const ctx = vm.createContext({ window: {}, localStorage: { getItem: () => null } });
+function load(rows, saved) {
+  const ctx = vm.createContext({ window: {}, localStorage: {
+    getItem: key => key === 'djsmarty-one-done-level4-v6' && saved ? JSON.stringify(saved) : null
+  } });
   vm.runInContext(fs.readFileSync(path.join(root, 'words.js'), 'utf8'), ctx);
   if (rows) ctx.window.SPELL_WORDS = rows;
   const html = fs.readFileSync(path.join(root, 'index.html'), 'utf8');
@@ -31,6 +33,17 @@ test('the full supplied dictionary is retained, regardless of familiarity or wor
     if (/^[a-z]{4,6}$/.test(word) && new Set(word).size === word.length)
       assert.ok(eligible.has(word), `Unexpected dictionary exclusion: ${word}`);
   }
+});
+
+test('restored walls contain at most 15 unique letters without losing played answers', () => {
+  const { app } = load(undefined, {
+    racks: ['ABCDEFGHIJKLMNOPQRSTUVWXYZ', 'aaabbcdefghijklmnop', 'CABXWPTSYDOUFRI'],
+    words: ['lazy', 'throw', ''], wave: 2
+  });
+  assert.equal(app.state.racks[0], 'ABCDEFGHIJKLMNO');
+  assert.equal(app.state.racks[1], 'ABCDEFGHIJKLMNO');
+  assert.equal(app.state.racks[2], 'CABXWPTSYDOUFRI');
+  assert.deepEqual(Array.from(app.state.words), ['lazy', 'throw', '']);
 });
 
 test('unfamiliar words and future answers count equally; accepted status does not override preservation', () => {
