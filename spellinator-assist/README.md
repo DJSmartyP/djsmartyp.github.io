@@ -11,7 +11,17 @@ This is a phone-friendly helper for the 60-second Level 4 badge, focused only on
 
 A July 2026 player discussion reports that letters change between rounds; new letters can appear. One person recalled 15 letters (4 vowels + 11 consonants), but this has **not been verified for Level 4 or for Watford**. The [Spellinator Dictionary](https://activate.ryflix.ca/dictionary.html) specifically says that **Levels 6–10** always show four vowels; it does **not** make that claim about Level 4. The helper does not enforce any vowel/consonant or total-letter quota.
 
-## Community Spellinator Dictionary — verified source comparison (v21)
+## Full community dictionary import (v22)
+
+The entire word list referenced by https://activate.ryflix.ca/dictionary.html is now bundled offline in `words.js`: **178,691 distinct TWL entries**, fetched from https://raw.githubusercontent.com/redbo/scrabble/master/dictionary.txt on 13 November 2026. The raw source SHA-256 is `eda7bc8b86a534de8065a7d0cc091dc918d400475061749d05a5711afda12a3b`.
+
+No frequency, familiarity, profanity, or proper-noun shortlist excludes source entries. The app still filters by the current 4/5/6-letter round, unique letters, available wall letters, letters used in earlier answers, and the player's explicit rejections. Familiarity data only orders suggestions. JYNX is kept as a separate badge-guide extra because it is absent from this US list. This community list does not establish official Activate acceptance.
+
+Regression case: LAZY → THROW, then wall `CABXWPTSYDOUFRI`, must offer **CUPIDS** and **CUSPID**. The screenshots also supply round 1 `ZPSAGOYXIVLDEJT` and round 2 `ILEPTJNUXOWRHSF`; both played words fit their respective walls and satisfy the badge restrictions.
+
+Service-worker cache and word-list asset versions are bumped to v22 so installed/offline clients fetch the replacement dictionary. Prior progress and accepted/rejected word records are preserved.
+
+## Historical source comparison (v21; superseded by v22)
 
 The [Spellinator Dictionary](https://activate.ryflix.ca/dictionary.html) is a community word-finding tool maintained by RDawg, *not* a confirmed copy of Activate's internal accepted-word list. Its page identifies its source as the US **TWL Tournament Word List** from [redbo/scrabble](https://github.com/redbo/scrabble).
 
@@ -19,7 +29,7 @@ The community tool describes **Levels 1–5** as allowing repeated letters in no
 
 **JYNX is valid in international/UK Scrabble word lists but is absent from US/TWL.** Thus adopting the community TWL dictionary as the sole source would incorrectly remove a word that the badge guide recommends. The app deliberately retains JYNX as a **BADGE GUIDE TIP**, never an unverified claim that Activate accepted it.
 
-Use the community word finder as an additional reference, not proof of in-room acceptance. The helper's locally recorded accepted/rejected words remain the best available game-specific observations.
+The v22 import above supersedes the earlier decision to retain the small bank. The community word finder is not proof of in-room acceptance. The helper's locally recorded accepted/rejected words remain the best available game-specific observations.
 
 ## Letter selection and badge rule (v19)
 

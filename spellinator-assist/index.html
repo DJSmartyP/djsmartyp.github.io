@@ -130,9 +130,9 @@ footer{margin-bottom:2px}
 <div class="error" id="error" role="alert" hidden></div>
 <div class="finish" id="finish" hidden></div>
 <div class="bottom"><span class="note">Tap a suggested word AFTER playing it. No confirmation screen.</span><div class="bottom-buttons"><button type="button" id="back">← Back</button><button type="button" id="reset">↻ Reset</button></div></div>
-<footer>Unofficial helper · No official Activate word list. Includes badge-guide strategic options, such as JYNX, which are not confirmed accepted. Record accepted words and reject failed ones to improve future suggestions.</footer>
+<footer>v22 · Full community dictionary: 178,691 TWL entries, plus JYNX as a badge-guide extra. Not an official Activate word list. Accepted/rejected words are remembered on this device.</footer>
 </main>
-<script src="./words.js?v=20"></script>
+<script src="./words.js?v=22"></script>
 <script>
 (function(){
 'use strict';
@@ -159,9 +159,7 @@ try{
 
  }
 }catch(e){}
-// Avoid obvious proper nouns, profanity and unreliable quick-pick suggestions.
-var avoid=new Set('fuck shit cunt piss porn rape sexy slut tits dick cock anal arse july june april march monday friday sunday tuesday google yahoo jesus satan israel london paris china japan india africa walmart blvd govt dept intl ltds http html https mysql json jpeg pdfs secs mins mins asap fyi btw wtf xbox raping raped rapes rapist rapists fucking fucked fucker shits shite shity sluts cocky'.split(' '));
-var words=(window.SPELL_WORDS||[]).filter(function(p){return /^[a-z]{4,6}$/.test(p[0])&&unique(p[0])&&!avoid.has(p[0])})
+var words=(window.SPELL_WORDS||[]).filter(function(p){return /^[a-z]{4,6}$/.test(p[0])&&unique(p[0])})
  .map(function(p){return {word:p[0],freq:Number(p[1])||1,tier:Number(p[2])||2,mask:usedMask(p[0]),len:p[0].length}});
 var REJECTED_KEY='djsmarty-spellinator-rejected-v1',rejected=new Set();
 var ACCEPTED_KEY='djsmarty-spellinator-accepted-v1',accepted=new Set();
